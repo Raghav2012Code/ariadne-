@@ -1,0 +1,151 @@
+"use client";
+import * as React from "react";
+import { useGridStore } from "@/store/useGridStore";
+import { GridCell } from "./GridCell";
+import { calculateCellSize } from "@/lib/utils/gridHelpers";
+
+export function GridCanvas() {
+  const grid = useGridStore((s) => s.grid);
+  const rows = useGridStore((s) => s.rows);
+  const cols = useGridStore((s) => s.cols);
+  const startNode = useGridStore((s) => s.startNode);
+  const targetNode = useGridStore((s) => s.targetNode);
+  const moveNode = useGridStore((s) => s.moveNode);
+  const setWall = useGridStore((s) => s.setWall);
+  const status = useGridStore((s) => s.status);
+
+  const stageRef = React.useRef<HTMLDivElement>(null);
+  const gridRef = React.useRef<HTMLDivElement>(null);
+  const [cellSize, setCellSize] = React.useState(16);
+  const dragRef = React.useRef<"start" | "target" | null>(null);
+  const mouseDownRef = React.useRef(false);
+  const mouseButtonRef = React.useRef(0);
+
+  const compute = React.useCallback(() => {
+    const stage = stageRef.current;
+    const nav = document.getElementById("nav");
+    const legend = document.getElementById("legend");
+    const ribbon = document.getElementById("ribbon");
+    if (!stage) return;
+    const navH = nav?.offsetHeight ?? 64;
+    const legH = legend?.offsetHeight ?? 28;
+    const ribH = ribbon?.offsetHeight ?? 28;
+    const availW = window.innerWidth - 20;
+    const availH = window.innerHeight - navH - legH - ribH - 16;
+    const size = calculateCellSize(availW, availH, cols, rows);
+    setCellSize(size);
+  }, [cols, rows]);
+
+  React.useEffect(() => {
+    compute();
+    let t: number | null = null;
+    const debounced = () => {
+      if (t) window.clearTimeout(t);
+      t = window.setTimeout(compute, 80);
+    };
+    window.addEventListener("resize", debounced);
+    window.addEventListener("orientationchange", debounced);
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(debounced);
+      if (stageRef.current) ro.observe(stageRef.current);
+      const nav = document.getElementById("nav");
+      const legend = document.getElementById("legend");
+      const ribbon = document.getElementById("ribbon");
+      if (nav) ro.observe(nav);
+      if (legend) ro.observe(legend);
+      if (ribbon) ro.observe(ribbon);
+    }
+    return () => {
+      window.removeEventListener("resize", debounced);
+      window.removeEventListener("orientationchange", debounced);
+      if (t) window.clearTimeout(t);
+      if (ro) ro.disconnect();
+    };
+  }, [compute]);
+
+  const getCellFromPoint = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y) as HTMLElement | null;
+    const cell = el?.closest("[data-cell]") as HTMLElement | null;
+    if (!cell) return null;
+    const r = parseInt(cell.dataset.r ?? "", 10);
+    const c = parseInt(cell.dataset.c ?? "", 10);
+    if (Number.isNaN(r) || Number.isNaN(c)) return null;
+    return { r, c };
+  };
+
+  const isVisualizing = status === "SEARCHING" || status === "GENERATING";
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (isVisualizing) return;
+    const target = e.target as HTMLElement;
+    const cell = target.closest("[data-cell]") as HTMLElement | null;
+    if (!cell) return;
+    const r = parseInt(cell.dataset.r ?? "", 10);
+    const c = parseInt(cell.dataset.c ?? "", 10);
+    if (r === startNode.r && c === startNode.c) { dragRef.current = "start"; return; }
+    if (r === targetNode.r && c === targetNode.c) { dragRef.current = "target"; return; }
+    dragRef.current = null;
+    mouseDownRef.current = true;
+    mouseButtonRef.current = e.button;
+    const isWall = !(e.shiftKey || e.button === 2);
+    setWall({ r, c }, isWall);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (isVisualizing) return;
+    if (dragRef.current) {
+      const p = getCellFromPoint(e.clientX, e.clientY);
+      if (!p) return;
+      const gridNode = grid[p.r]?.[p.c];
+      if (!gridNode || gridNode.type === "wall") return;
+      moveNode(dragRef.current, p);
+      return;
+    }
+    if (!mouseDownRef.current) return;
+    const cell = (e.target as HTMLElement).closest("[data-cell]") as HTMLElement | null;
+    // also support elementFromPoint for fast drag
+    const p = getCellFromPoint(e.clientX, e.clientY) ?? (() => {
+      if (!cell) return null;
+      return { r: parseInt(cell.dataset.r ?? "", 10), c: parseInt(cell.dataset.c ?? "", 10) };
+    })();
+    if (!p) return;
+    const isWall = !(e.shiftKey || mouseButtonRef.current === 2);
+    setWall(p, isWall);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    mouseDownRef.current = false;
+    dragRef.current = null;
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch {}
+  };
+
+  if (grid.length === 0) return null;
+
+  return (
+    <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden bg-black touch-none">
+      <div
+        ref={gridRef}
+        role="grid"
+        aria-label="Maze grid"
+        className="grid gap-px bg-zinc-800 border border-zinc-800 rounded-lg p-0.5 shrink-0 select-none touch-none"
+        style={
+          {
+            gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
+            // @ts-ignore
+            "--cell-size": `${cellSize}px`,
+          } as React.CSSProperties
+        }
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {grid.map((row) => row.map((node) => <GridCell key={`${node.r}-${node.c}`} node={node} />))}
+      </div>
+    </div>
+  );
+}
