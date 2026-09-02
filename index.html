@@ -1,106 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ariadne — 2D Maze & Search Visualizer</title>
-  <meta name="description" content="Ariadne: Minimalist Maze Generation and Pathfinding Visualizer" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Ariadne — Dark Minimalist Pathfinding & Maze Engine</title>
+<meta name="description" content="Ariadne: Pitch-black pathfinding and maze engine"/>
+<link rel="stylesheet" href="style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header class="header">
-    <div class="header-top">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="7" fill="#6366f1"/>
-            <path d="M7.5 14 L14 7.5 L20.5 14 L14 20.5 Z" stroke="white" stroke-width="1.7" fill="none" stroke-linejoin="round"/>
-            <circle cx="14" cy="14" r="2.1" fill="white"/>
-            <circle cx="14" cy="14" r="0.9" fill="#6366f1"/>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <h1>Ariadne</h1>
-          <span>2D Maze & Search</span>
-        </div>
-      </div>
+<header class="nav">
+  <div class="nav-left">
+    <div class="logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <rect width="26" height="26" rx="7" fill="#fff"/>
+        <path d="M7 13 L13 7 L19 13 L13 19 Z" stroke="#000" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+        <circle cx="13" cy="13" r="2.3" fill="#000"/>
+      </svg>
+      <span>ARIADNE</span>
+    </div>
+    <div class="nav-sep"></div>
+    <div class="field">
+      <label for="algoSelect">Algorithm</label>
+      <select id="algoSelect" class="select">
+        <option value="astar" selected>A* Search</option>
+        <option value="dijkstra">Dijkstra</option>
+        <option value="bfs">BFS</option>
+        <option value="dfs">DFS</option>
+        <option value="greedy">Greedy BFS</option>
+        <option value="bibfs">Bidirectional BFS</option>
+        <option value="biastar">Bidirectional A*</option>
+        <option value="jps">Jump Point Search</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="mazeSelect">Maze</label>
+      <select id="mazeSelect" class="select">
+        <option value="backtracking" selected>Backtracking</option>
+        <option value="prim">Prim's</option>
+        <option value="kruskal">Kruskal's</option>
+        <option value="division">Division</option>
+        <option value="cellular">Cellular</option>
+        <option value="spiral">Spiral</option>
+      </select>
+    </div>
+  </div>
 
-      <div class="header-controls">
-        <div class="control">
-          <label for="algoSelect">Algorithm</label>
-          <select id="algoSelect" class="select">
-            <option value="bfs">BFS</option>
-            <option value="dfs">DFS</option>
-            <option value="dijkstra">Dijkstra</option>
-            <option value="astar" selected>A* Search</option>
-            <option value="greedy">Greedy BFS</option>
-          </select>
-        </div>
-        <div class="control">
-          <label for="mazeSelect">Generator</label>
-          <select id="mazeSelect" class="select">
-            <option value="backtracking" selected>Backtracking</option>
-            <option value="prim">Prim's</option>
-            <option value="division">Division</option>
-            <option value="random">Clutter</option>
-          </select>
-        </div>
-        <div class="control density-control">
-          <label>Density</label>
-          <div class="segmented" role="group" aria-label="Density">
-            <button class="seg" data-density="focused" type="button">Focused</button>
-            <button class="seg active" data-density="standard" type="button">Standard</button>
-            <button class="seg" data-density="compact" type="button">Compact</button>
-          </div>
-        </div>
-        <div class="control speed-control">
-          <label for="speedRange">Speed — <span id="speedLabel">Normal</span></label>
-          <input id="speedRange" type="range" min="0" max="3" value="2" step="1" />
-        </div>
-      </div>
+  <div class="nav-center">
+    <div class="density" role="group" aria-label="Density">
+      <button class="density-btn" data-density="spacious" type="button">Spacious</button>
+      <button class="density-btn active" data-density="balanced" type="button">Balanced</button>
+      <button class="density-btn" data-density="dense" type="button">Dense</button>
+    </div>
+    <div class="speed">
+      <span class="speed-label">Speed</span>
+      <input id="speedRange" type="range" min="0" max="3" value="1" step="1" aria-label="Speed"/>
+      <span id="speedLabel" class="speed-value">Normal</span>
+    </div>
+  </div>
 
-      <div class="header-actions">
-        <button id="visualizeBtn" class="btn btn-primary" type="button">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M3 2.2 L10.2 6.5 L3 10.8 Z" fill="currentColor"/></svg>
-          <span id="visualizeLabel">Visualize</span>
-        </button>
-        <button id="genMazeBtn" class="btn btn-soft" type="button">New Maze</button>
-        <button id="clearPathBtn" class="btn btn-ghost" type="button">Clear Path</button>
-        <button id="clearWallsBtn" class="btn btn-ghost" type="button">Clear Walls</button>
+  <div class="nav-right">
+    <button id="visualizeBtn" class="btn btn-visualize" type="button">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2.2 1.4 L8.8 5.5 L2.2 9.6 Z" fill="currentColor"/></svg>
+      <span>Visualize</span>
+    </button>
+    <button id="generateBtn" class="btn btn-ghost" type="button">Generate</button>
+    <div class="dropdown">
+      <button id="clearToggle" class="btn btn-ghost btn-caret" type="button">Clear ▾</button>
+      <div id="clearMenu" class="dropdown-menu hidden">
+        <button data-clear="path" type="button">Clear Path</button>
+        <button data-clear="walls" type="button">Clear Walls</button>
+        <button data-clear="reset" type="button">Full Reset</button>
       </div>
     </div>
+  </div>
+</header>
 
-    <div class="legend" aria-label="Legend">
-      <span class="legend-item"><i class="swatch swatch-start"></i>Start</span>
-      <span class="legend-item"><i class="swatch swatch-target"></i>Target</span>
-      <span class="legend-item"><i class="swatch swatch-unvisited"></i>Unvisited</span>
-      <span class="legend-item"><i class="swatch swatch-visited"></i>Visited</span>
-      <span class="legend-item"><i class="swatch swatch-frontier"></i>Frontier</span>
-      <span class="legend-item"><i class="swatch swatch-path"></i>Path</span>
-      <span class="legend-item"><i class="swatch swatch-wall"></i>Wall</span>
-      <span class="legend-item"><i class="swatch swatch-weight"></i>Weight</span>
-      <span class="legend-hint">Drag Start/Target • Left-drag Wall • Shift/Right Erase</span>
-    </div>
-  </header>
+<div class="legend">
+  <span class="legend-item"><i class="swatch swatch-start"></i>Start</span>
+  <span class="legend-item"><i class="swatch swatch-target"></i>Target</span>
+  <span class="legend-item"><i class="swatch swatch-unvisited"></i>Unvisited</span>
+  <span class="legend-item"><i class="swatch swatch-visited"></i>Visited</span>
+  <span class="legend-item"><i class="swatch swatch-frontier"></i>Frontier</span>
+  <span class="legend-item"><i class="swatch swatch-path"></i>Path</span>
+  <span class="legend-item"><i class="swatch swatch-wall"></i>Wall</span>
+  <span class="legend-item"><i class="swatch swatch-weight"></i>Weight ×5</span>
+  <span class="legend-hint">Drag anchors • Left wall • Right/Shift erase</span>
+</div>
 
-  <main class="stage" id="stage">
-    <div id="grid" class="grid" role="grid" aria-label="Maze grid"></div>
-  </main>
+<main class="stage" id="stage">
+  <div id="grid" class="grid" role="grid" aria-label="Maze grid"></div>
+</main>
 
-  <footer class="ribbon" aria-label="Metrics">
-    <div class="ribbon-inner">
-      <div class="metric"><span class="k">Visited</span><span id="metricVisited" class="v">0</span></div>
-      <div class="metric"><span class="k">Path</span><span id="metricPath" class="v">—</span></div>
-      <div class="metric"><span class="k">Time</span><span id="metricTime" class="v">0.00 ms</span></div>
-      <div class="ribbon-divider"></div>
-      <span id="statusBadge" class="badge badge-idle">Idle</span>
-      <span class="ribbon-hint">Space: Visualize • C: Clear path • R: New maze</span>
-    </div>
-  </footer>
+<footer class="ribbon">
+  <div class="ribbon-inner" id="ribbonInner">
+    <span>ALGORITHM: <b id="ribbonAlgo">A*</b></span>
+    <span class="dot">•</span>
+    <span>STATUS: <b id="ribbonStatus">READY</b></span>
+    <span class="dot">•</span>
+    <span>VISITED: <b id="ribbonVisited">0</b></span>
+    <span class="dot">•</span>
+    <span>PATH: <b id="ribbonPath">0</b></span>
+    <span class="dot">•</span>
+    <span>LATENCY: <b id="ribbonLatency">0.0ms</b></span>
+  </div>
+</footer>
 
-  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
 </body>
 </html>
