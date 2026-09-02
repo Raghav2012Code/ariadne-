@@ -2,82 +2,87 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Ariadne — Dark Minimalist Pathfinding & Maze Engine</title>
-<meta name="description" content="Ariadne: Pitch-black pathfinding and maze engine"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<title>Ariadne: Dark Minimalist Maze & Search Engine</title>
+<meta name="description" content="Ariadne: Dark Minimalist Maze & Search Engine"/>
 <link rel="stylesheet" href="style.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<header class="nav">
-  <div class="nav-left">
-    <div class="logo">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
-        <rect width="26" height="26" rx="7" fill="#fff"/>
-        <path d="M7 13 L13 7 L19 13 L13 19 Z" stroke="#000" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
-        <circle cx="13" cy="13" r="2.3" fill="#000"/>
-      </svg>
-      <span>ARIADNE</span>
+<header class="nav" id="nav">
+  <div class="nav-row nav-top">
+    <div class="nav-left">
+      <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true"><rect width="26" height="26" rx="7" fill="#fff"/><path d="M7 13 L13 7 L19 13 L13 19 Z" stroke="#000" stroke-width="1.6" fill="none" stroke-linejoin="round"/><circle cx="13" cy="13" r="2.3" fill="#000"/></svg>
+        <span>ARIADNE</span>
+      </div>
+      <div class="nav-sep"></div>
+      <div class="field">
+        <label for="algoSelect">Algorithm</label>
+        <select id="algoSelect" class="select">
+          <option value="astar" selected>A* Search</option>
+          <option value="dijkstra">Dijkstra</option>
+          <option value="bfs">BFS</option>
+          <option value="dfs">DFS</option>
+          <option value="greedy">Greedy Best-First</option>
+          <option value="bibfs">Bidirectional BFS</option>
+          <option value="biastar">Bidirectional A*</option>
+          <option value="jps">Jump Point Search</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mazeSelect">Maze</label>
+        <select id="mazeSelect" class="select">
+          <option value="backtracking" selected>Backtracking</option>
+          <option value="prim">Prim's</option>
+          <option value="kruskal">Kruskal's</option>
+          <option value="division">Division</option>
+          <option value="cellular">Cellular</option>
+          <option value="spiral">Spiral</option>
+        </select>
+      </div>
     </div>
-    <div class="nav-sep"></div>
-    <div class="field">
-      <label for="algoSelect">Algorithm</label>
-      <select id="algoSelect" class="select">
-        <option value="astar" selected>A* Search</option>
-        <option value="dijkstra">Dijkstra</option>
-        <option value="bfs">BFS</option>
-        <option value="dfs">DFS</option>
-        <option value="greedy">Greedy BFS</option>
-        <option value="bibfs">Bidirectional BFS</option>
-        <option value="biastar">Bidirectional A*</option>
-        <option value="jps">Jump Point Search</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="mazeSelect">Maze</label>
-      <select id="mazeSelect" class="select">
-        <option value="backtracking" selected>Backtracking</option>
-        <option value="prim">Prim's</option>
-        <option value="kruskal">Kruskal's</option>
-        <option value="division">Division</option>
-        <option value="cellular">Cellular</option>
-        <option value="spiral">Spiral</option>
-      </select>
+    <div class="nav-right">
+      <button id="visualizeBtn" class="btn btn-visualize" type="button"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2.2 1.4 L8.8 5.5 L2.2 9.6 Z" fill="currentColor"/></svg><span>Visualize</span></button>
+      <button id="generateBtn" class="btn btn-ghost" type="button">New Maze</button>
+      <div class="dropdown">
+        <button id="clearToggle" class="btn btn-ghost btn-caret" type="button">Clear ▾</button>
+        <div id="clearMenu" class="dropdown-menu hidden">
+          <button data-clear="path" type="button">Clear Path</button>
+          <button data-clear="walls" type="button">Clear Walls</button>
+          <button data-clear="reset" type="button">Full Reset</button>
+        </div>
+      </div>
     </div>
   </div>
-
-  <div class="nav-center">
-    <div class="density" role="group" aria-label="Density">
-      <button class="density-btn" data-density="spacious" type="button">Spacious</button>
-      <button class="density-btn active" data-density="balanced" type="button">Balanced</button>
-      <button class="density-btn" data-density="dense" type="button">Dense</button>
+  <div class="nav-row nav-bottom">
+    <div class="pill-group" role="group" aria-label="Difficulty">
+      <span class="pill-label">Difficulty</span>
+      <div class="segmented" id="difficultyGroup">
+        <button class="seg" data-difficulty="easy" type="button">Easy</button>
+        <button class="seg active" data-difficulty="medium" type="button">Medium</button>
+        <button class="seg" data-difficulty="hard" type="button">Hard</button>
+      </div>
+    </div>
+    <div class="pill-group" role="group" aria-label="Density">
+      <span class="pill-label">Density</span>
+      <div class="segmented density" id="densityGroup">
+        <button class="density-btn" data-density="spacious" type="button">Spacious</button>
+        <button class="density-btn active" data-density="balanced" type="button">Balanced</button>
+        <button class="density-btn" data-density="dense" type="button">Dense</button>
+      </div>
     </div>
     <div class="speed">
       <span class="speed-label">Speed</span>
       <input id="speedRange" type="range" min="0" max="3" value="1" step="1" aria-label="Speed"/>
       <span id="speedLabel" class="speed-value">Normal</span>
     </div>
-  </div>
-
-  <div class="nav-right">
-    <button id="visualizeBtn" class="btn btn-visualize" type="button">
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2.2 1.4 L8.8 5.5 L2.2 9.6 Z" fill="currentColor"/></svg>
-      <span>Visualize</span>
-    </button>
-    <button id="generateBtn" class="btn btn-ghost" type="button">Generate</button>
-    <div class="dropdown">
-      <button id="clearToggle" class="btn btn-ghost btn-caret" type="button">Clear ▾</button>
-      <div id="clearMenu" class="dropdown-menu hidden">
-        <button data-clear="path" type="button">Clear Path</button>
-        <button data-clear="walls" type="button">Clear Walls</button>
-        <button data-clear="reset" type="button">Full Reset</button>
-      </div>
-    </div>
+    <span class="nav-hint">Drag anchors • Left wall • Right/Shift erase • Pinch/drag on mobile</span>
   </div>
 </header>
 
-<div class="legend">
+<div class="legend" id="legend">
   <span class="legend-item"><i class="swatch swatch-start"></i>Start</span>
   <span class="legend-item"><i class="swatch swatch-target"></i>Target</span>
   <span class="legend-item"><i class="swatch swatch-unvisited"></i>Unvisited</span>
@@ -86,23 +91,19 @@
   <span class="legend-item"><i class="swatch swatch-path"></i>Path</span>
   <span class="legend-item"><i class="swatch swatch-wall"></i>Wall</span>
   <span class="legend-item"><i class="swatch swatch-weight"></i>Weight ×5</span>
-  <span class="legend-hint">Drag anchors • Left wall • Right/Shift erase</span>
 </div>
 
 <main class="stage" id="stage">
   <div id="grid" class="grid" role="grid" aria-label="Maze grid"></div>
 </main>
 
-<footer class="ribbon">
-  <div class="ribbon-inner" id="ribbonInner">
-    <span>ALGORITHM: <b id="ribbonAlgo">A*</b></span>
-    <span class="dot">•</span>
-    <span>STATUS: <b id="ribbonStatus">READY</b></span>
-    <span class="dot">•</span>
-    <span>VISITED: <b id="ribbonVisited">0</b></span>
-    <span class="dot">•</span>
-    <span>PATH: <b id="ribbonPath">0</b></span>
-    <span class="dot">•</span>
+<footer class="ribbon" id="ribbon">
+  <div class="ribbon-inner">
+    <span>ALGO: <b id="ribbonAlgo">A*</b></span><span class="dot">•</span>
+    <span>DIFFICULTY: <b id="ribbonDifficulty">MEDIUM</b></span><span class="dot">•</span>
+    <span>STATUS: <b id="ribbonStatus">READY</b></span><span class="dot">•</span>
+    <span>VISITED: <b id="ribbonVisited">0</b></span><span class="dot">•</span>
+    <span>PATH: <b id="ribbonPath">0</b></span><span class="dot">•</span>
     <span>LATENCY: <b id="ribbonLatency">0.0ms</b></span>
   </div>
 </footer>
