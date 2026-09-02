@@ -365,6 +365,8 @@ class PathfindingEngine{
   reconstructBidirectional(meet){
     const fwd=[]; let cur=meet; while(cur){ fwd.push(cur); cur=cur.parent; } fwd.reverse();
     const bwd=[]; cur=meet.parentB; while(cur){ bwd.push(cur); cur=cur.parentB; }
+    if(fwd.length && bwd.length && fwd[fwd.length-1]===bwd[0]) bwd.shift();
+    if(fwd.length && bwd.length && fwd[fwd.length-1].r===bwd[0]?.r && fwd[fwd.length-1].c===bwd[0]?.c) bwd.shift();
     return fwd.concat(bwd);
   }
   expandJPSPath(jumpPath){
@@ -442,10 +444,12 @@ class PathfindingEngine{
     }
     return null;
   }
+  isEuclidean(){ const el=document.getElementById('heuristicToggle'); return el? el.checked : false; }
   async astar(token, delay, ref){
+    const eu=this.isEuclidean();
     for(let r=0;r<this.gs.rows;r++) for(let c=0;c<this.gs.cols;c++){ const n=this.gs.grid[r][c]; n.g=Infinity; n.h=0; n.f=Infinity; n.parent=null; }
     const s=this.gs.grid[this.gs.start.r][this.gs.start.c], t=this.gs.grid[this.gs.target.r][this.gs.target.c];
-    s.g=0; s.h=this.gs.heuristic(s,t,false); s.f=s.h;
+    s.g=0; s.h=this.gs.heuristic(s,t,eu); s.f=s.h;
     const pq=new PriorityQueue((a,b)=>a.f-b.f); pq.push(s); const closed=new Set();
     while(!pq.isEmpty()){
       if(token.cancelled) throw new Error('aborted');
@@ -456,15 +460,16 @@ class PathfindingEngine{
       for(const nb of this.gs.getNeighbors(cur)){
         const kk=`${nb.r},${nb.c}`; if(closed.has(kk)) continue;
         const tentative=cur.g+this.gs.nodeCost(nb);
-        if(tentative<nb.g){ nb.parent=cur; nb.g=tentative; nb.h=this.gs.heuristic(nb,t,false); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pq.push(nb); }
+        if(tentative<nb.g){ nb.parent=cur; nb.g=tentative; nb.h=this.gs.heuristic(nb,t,eu); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pq.push(nb); }
       }
     }
     return null;
   }
   async greedy(token, delay, ref){
+    const eu=this.isEuclidean();
     for(let r=0;r<this.gs.rows;r++) for(let c=0;c<this.gs.cols;c++){ const n=this.gs.grid[r][c]; n.f=Infinity; n.parent=null; }
     const s=this.gs.grid[this.gs.start.r][this.gs.start.c], t=this.gs.grid[this.gs.target.r][this.gs.target.c];
-    s.h=this.gs.heuristic(s,t,false); s.f=s.h;
+    s.h=this.gs.heuristic(s,t,eu); s.f=s.h;
     const pq=new PriorityQueue((a,b)=>a.f-b.f); pq.push(s); const seen=new Set();
     while(!pq.isEmpty()){
       if(token.cancelled) throw new Error('aborted');
@@ -474,7 +479,7 @@ class PathfindingEngine{
       if(delay!==0) await this.maybeDelay(token,delay);
       for(const nb of this.gs.getNeighbors(cur)){
         const kk=`${nb.r},${nb.c}`; if(seen.has(kk)) continue; if(nb.parent) continue;
-        nb.parent=cur; nb.h=this.gs.heuristic(nb,t,false); nb.f=nb.h; this.markFrontier(nb,delay); pq.push(nb);
+        nb.parent=cur; nb.h=this.gs.heuristic(nb,t,eu); nb.f=nb.h; this.markFrontier(nb,delay); pq.push(nb);
       }
     }
     return null;
@@ -510,10 +515,11 @@ class PathfindingEngine{
     return null;
   }
   async biastar(token, delay, ref){
+    const eu=this.isEuclidean();
     for(let r=0;r<this.gs.rows;r++) for(let c=0;c<this.gs.cols;c++){ const n=this.gs.grid[r][c]; n.g=Infinity; n.h=0; n.f=Infinity; n.parent=null; n.parentB=null; n.gB=Infinity; n.hB=0; n.fB=Infinity; }
     const s=this.gs.grid[this.gs.start.r][this.gs.start.c], t=this.gs.grid[this.gs.target.r][this.gs.target.c];
-    s.g=0; s.h=this.gs.heuristic(s,t); s.f=s.h;
-    t.gB=0; t.hB=this.gs.heuristic(t,s); t.fB=t.hB;
+    s.g=0; s.h=this.gs.heuristic(s,t,eu); s.f=s.h;
+    t.gB=0; t.hB=this.gs.heuristic(t,s,eu); t.fB=t.hB;
     const pqF=new PriorityQueue((a,b)=>a.f-b.f); pqF.push(s);
     const pqB=new PriorityQueue((a,b)=>a.fB-b.fB); pqB.push(t);
     const closedF=new Set(), closedB=new Set(); let best=null, bestCost=Infinity;
@@ -528,7 +534,7 @@ class PathfindingEngine{
           for(const nb of this.gs.getNeighbors(cur)){
             const kk=`${nb.r},${nb.c}`; if(closedF.has(kk)) continue;
             const tentative=cur.g+this.gs.nodeCost(nb);
-            if(tentative<nb.g){ nb.parent=cur; nb.g=tentative; nb.h=this.gs.heuristic(nb,t); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pqF.push(nb); if(closedB.has(kk)) update(nb); }
+            if(tentative<nb.g){ nb.parent=cur; nb.g=tentative; nb.h=this.gs.heuristic(nb,t,eu); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pqF.push(nb); if(closedB.has(kk)) update(nb); }
           }
         }
       }
@@ -540,7 +546,7 @@ class PathfindingEngine{
           for(const nb of this.gs.getNeighbors(cur)){
             const kk=`${nb.r},${nb.c}`; if(closedB.has(kk)) continue;
             const tentative=(cur.gB===Infinity?0:cur.gB)+this.gs.nodeCost(nb);
-            if(tentative<(nb.gB===Infinity?1e9:nb.gB)){ nb.parentB=cur; nb.gB=tentative; nb.hB=this.gs.heuristic(nb,s); nb.fB=nb.gB+nb.hB; this.markFrontier(nb,delay); pqB.push(nb); if(closedF.has(kk)) update(nb); }
+            if(tentative<(nb.gB===Infinity?1e9:nb.gB)){ nb.parentB=cur; nb.gB=tentative; nb.hB=this.gs.heuristic(nb,s,eu); nb.fB=nb.gB+nb.hB; this.markFrontier(nb,delay); pqB.push(nb); if(closedF.has(kk)) update(nb); }
           }
         }
       }
@@ -578,9 +584,10 @@ class PathfindingEngine{
     }
   }
   async jps(token, delay, ref){
+    const eu=this.isEuclidean();
     for(let r=0;r<this.gs.rows;r++) for(let c=0;c<this.gs.cols;c++){ const n=this.gs.grid[r][c]; n.g=Infinity; n.h=0; n.f=Infinity; n.parent=null; }
     const s=this.gs.grid[this.gs.start.r][this.gs.start.c], t=this.gs.grid[this.gs.target.r][this.gs.target.c];
-    s.g=0; s.h=this.gs.heuristic(s,t); s.f=s.h;
+    s.g=0; s.h=this.gs.heuristic(s,t,eu); s.f=s.h;
     const pq=new PriorityQueue((a,b)=>a.f-b.f); pq.push(s); const closed=new Set(); const dirs=[[-1,0],[1,0],[0,-1],[0,1]];
     while(!pq.isEmpty()){
       if(token.cancelled) throw new Error('aborted');
@@ -595,7 +602,7 @@ class PathfindingEngine{
             const dist=Math.abs(jp.r-cur.r)+Math.abs(jp.c-cur.c);
             let wCost=0; let rr=cur.r, cc=cur.c; for(let s=0;s<dist;s++){ rr+=dir[0]; cc+=dir[1]; wCost+=this.gs.nodeCost(this.gs.grid[rr][cc]); }
             const tentative=cur.g+wCost;
-            if(tentative<jp.g){ jp.parent=cur; jp.g=tentative; jp.h=this.gs.heuristic(jp,t); jp.f=jp.g+jp.h; this.markFrontier(jp,delay); pq.push(jp); }
+            if(tentative<jp.g){ jp.parent=cur; jp.g=tentative; jp.h=this.gs.heuristic(jp,t,eu); jp.f=jp.g+jp.h; this.markFrontier(jp,delay); pq.push(jp); }
           }
         }
         const nr=cur.r+dir[0], nc=cur.c+dir[1];
@@ -604,7 +611,7 @@ class PathfindingEngine{
         const kk2=`${nb.r},${nb.c}`; if(closed.has(kk2)) continue;
         if(jp && jp.r===nb.r && jp.c===nb.c) continue;
         const tentative2=cur.g+this.gs.nodeCost(nb);
-        if(tentative2<nb.g){ nb.parent=cur; nb.g=tentative2; nb.h=this.gs.heuristic(nb,t); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pq.push(nb); }
+        if(tentative2<nb.g){ nb.parent=cur; nb.g=tentative2; nb.h=this.gs.heuristic(nb,t,eu); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pq.push(nb); }
       }
     }
     return null;
@@ -687,6 +694,7 @@ class UIController{
     this.clearMenu=document.getElementById('clearMenu');
     this.difficultyGroup=document.getElementById('difficultyGroup');
     this.densityGroup=document.getElementById('densityGroup');
+    this.heuristicToggle=document.getElementById('heuristicToggle');
     this.ribbonAlgo=document.getElementById('ribbonAlgo');
     this.ribbonDifficulty=document.getElementById('ribbonDifficulty');
     this.ribbonStatus=document.getElementById('ribbonStatus');
@@ -694,6 +702,7 @@ class UIController{
     this.ribbonPath=document.getElementById('ribbonPath');
     this.ribbonLatency=document.getElementById('ribbonLatency');
     this.toastEl=document.getElementById('toast');
+    this.resizeObserver=null;
     this.isVisualizing=false;
     this.token={cancelled:false};
     this.speedMap=[
@@ -754,25 +763,45 @@ class UIController{
     window.addEventListener('resize', debounced);
     window.addEventListener('orientationchange', debounced);
     if(window.ResizeObserver){
-      const ro=new ResizeObserver(debounced);
-      ro.observe(this.gs.stageEl); ro.observe(this.gs.gridEl);
+      this.resizeObserver=new ResizeObserver(debounced);
+      this.resizeObserver.observe(this.gs.stageEl); this.resizeObserver.observe(this.gs.gridEl);
       const nav=document.getElementById('nav'), legend=document.getElementById('legend'), ribbon=document.getElementById('ribbon');
-      if(nav) ro.observe(nav); if(legend) ro.observe(legend); if(ribbon) ro.observe(ribbon);
+      if(nav) this.resizeObserver.observe(nav); if(legend) this.resizeObserver.observe(legend); if(ribbon) this.resizeObserver.observe(ribbon);
+      window.addEventListener('beforeunload', ()=>{ try{ this.resizeObserver.disconnect(); }catch(e){} });
+    }
+  }
+  setVisualizeButtonVisualizing(isVisualizing){
+    this.visualizeBtn.textContent='';
+    const svgNS='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(svgNS,'svg');
+    svg.setAttribute('width','11'); svg.setAttribute('height','11'); svg.setAttribute('viewBox','0 0 11 11'); svg.setAttribute('aria-hidden','true');
+    if(isVisualizing){
+      const r1=document.createElementNS(svgNS,'rect'); r1.setAttribute('x','1.5'); r1.setAttribute('y','1.5'); r1.setAttribute('width','2.8'); r1.setAttribute('height','8'); r1.setAttribute('rx','1'); r1.setAttribute('fill','currentColor');
+      const r2=document.createElementNS(svgNS,'rect'); r2.setAttribute('x','6.7'); r2.setAttribute('y','1.5'); r2.setAttribute('width','2.8'); r2.setAttribute('height','8'); r2.setAttribute('rx','1'); r2.setAttribute('fill','currentColor');
+      svg.append(r1,r2);
+      this.visualizeBtn.append(svg, document.createTextNode(' Abort'));
+    } else {
+      const p=document.createElementNS(svgNS,'path'); p.setAttribute('d','M2.2 1.4 L8.8 5.5 L2.2 9.6 Z'); p.setAttribute('fill','currentColor');
+      svg.append(p);
+      this.visualizeBtn.append(svg, document.createTextNode(' Visualize'));
     }
   }
   bindEvents(){
     this.visualizeBtn.addEventListener('click', ()=>this.runVisualization());
     this.generateBtn.addEventListener('click', ()=>this.runMazeGeneration());
-    this.clearToggle.addEventListener('click', ()=>this.clearMenu.classList.toggle('hidden'));
+    this.clearToggle.addEventListener('click', ()=>{
+      const hidden=this.clearMenu.classList.toggle('hidden');
+      this.clearToggle.setAttribute('aria-expanded', String(!hidden));
+    });
     this.clearMenu.addEventListener('click', e=>{
       const btn=e.target.closest('button'); if(!btn) return;
       const act=btn.dataset.clear;
-      this.clearMenu.classList.add('hidden');
+      this.clearMenu.classList.add('hidden'); this.clearToggle.setAttribute('aria-expanded','false');
       if(act==='path'){ if(this.isVisualizing){ this.token.cancelled=true; this.isVisualizing=false; this.setControlsEnabled(true); } this.gs.clearPathState(); this.updateRibbon(0,0,0); this.setStatus('READY'); this.toast('Path cleared','success'); }
       else if(act==='walls'){ this.gs.clearWalls(); this.updateRibbon(0,0,0); this.setStatus('READY'); this.toast('Walls cleared','success'); }
       else if(act==='reset'){ this.fullReset(); this.toast('Full reset','success'); }
     });
-    document.addEventListener('click', e=>{ if(!e.target.closest('.dropdown')) this.clearMenu.classList.add('hidden'); });
+    document.addEventListener('click', e=>{ if(!e.target.closest('.dropdown')){ this.clearMenu.classList.add('hidden'); this.clearToggle.setAttribute('aria-expanded','false'); }});
     this.difficultyGroup.addEventListener('click', e=>{
       const btn=e.target.closest('button'); if(!btn||this.isVisualizing) return;
       this.difficultyGroup.querySelectorAll('button').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
@@ -802,7 +831,7 @@ class UIController{
     if(this.isVisualizing){
       this.token.cancelled=true; this.isVisualizing=false; this.setStatus('READY'); this.setControlsEnabled(true);
       this.visualizeBtn.classList.remove('pulsing');
-      this.visualizeBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2.2 1.4 L8.8 5.5 L2.2 9.6 Z" fill="currentColor"/></svg><span>Visualize</span>';
+      this.setVisualizeButtonVisualizing(false);
       this.toast('Cancelled','error'); return;
     }
     const algo=this.algoSelect.value;
@@ -819,7 +848,7 @@ class UIController{
     const runner=runners[algo]; if(!runner){ this.toast('Unknown','error'); return; }
     this.gs.clearPathState();
     const token=this.newToken(); this.isVisualizing=true; this.setControlsEnabled(false);
-    this.visualizeBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1.5" y="1.5" width="2.8" height="8" rx="1" fill="currentColor"/><rect x="6.7" y="1.5" width="2.8" height="8" rx="1" fill="currentColor"/></svg><span>Abort</span>';
+    this.setVisualizeButtonVisualizing(true);
     this.visualizeBtn.classList.add('pulsing'); this.setStatus('SEARCHING');
     this.gs.renderQueue.clear();
     const ref={count:0}; const t0=performance.now(); this.ribbonVisited.textContent='0'; this.ribbonPath.textContent='0';
@@ -843,7 +872,7 @@ class UIController{
       }
     }catch(e){ if(e.message!=='aborted'){ this.toast(e.message,'error'); this.setStatus('ERROR'); } }
     finally{
-      if(!token.cancelled){ this.isVisualizing=false; this.setControlsEnabled(true); this.visualizeBtn.classList.remove('pulsing'); this.visualizeBtn.innerHTML='<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2.2 1.4 L8.8 5.5 L2.2 9.6 Z" fill="currentColor"/></svg><span>Visualize</span>'; }
+      if(!token.cancelled){ this.isVisualizing=false; this.setControlsEnabled(true); this.visualizeBtn.classList.remove('pulsing'); this.setVisualizeButtonVisualizing(false); }
     }
   }
   async runMazeGeneration(){

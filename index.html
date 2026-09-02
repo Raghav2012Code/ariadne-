@@ -47,7 +47,7 @@
       <button id="visualizeBtn" class="btn btn-visualize" type="button"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true"><path d="M2.2 1.4 L8.8 5.5 L2.2 9.6 Z" fill="currentColor"/></svg><span>Visualize</span></button>
       <button id="generateBtn" class="btn btn-ghost" type="button">New Maze</button>
       <div class="dropdown">
-        <button id="clearToggle" class="btn btn-ghost btn-caret" type="button">Clear ▾</button>
+        <button id="clearToggle" class="btn btn-ghost btn-caret" type="button" aria-expanded="false" aria-haspopup="menu">Clear ▾</button>
         <div id="clearMenu" class="dropdown-menu hidden">
           <button data-clear="path" type="button">Clear Path</button>
           <button data-clear="walls" type="button">Clear Walls</button>
@@ -78,6 +78,7 @@
       <input id="speedRange" type="range" min="0" max="3" value="1" step="1" aria-label="Speed"/>
       <span id="speedLabel" class="speed-value">Normal</span>
     </div>
+    <label class="pill-group" style="gap:6px;cursor:pointer" title="Toggle Euclidean heuristic for A*/Greedy/JPS"><input id="heuristicToggle" type="checkbox" style="accent-color:#fff;width:14px;height:14px"/><span class="pill-label" style="cursor:pointer">Euclidean</span></label>
     <span class="nav-hint">Drag anchors • Left wall • Right/Shift erase • Pinch/drag on mobile</span>
   </div>
 </header>
