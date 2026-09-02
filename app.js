@@ -367,6 +367,23 @@ class PathfindingEngine{
     const bwd=[]; cur=meet.parentB; while(cur){ bwd.push(cur); cur=cur.parentB; }
     return fwd.concat(bwd);
   }
+  expandJPSPath(jumpPath){
+    if(!jumpPath||jumpPath.length<2) return jumpPath;
+    const full=[];
+    for(let i=0;i<jumpPath.length-1;i++){
+      const a=jumpPath[i], b=jumpPath[i+1];
+      full.push(a);
+      const dr=Math.sign(b.r-a.r), dc=Math.sign(b.c-a.c);
+      let r=a.r+dr, c=a.c+dc;
+      while(r!==b.r||c!==b.c){
+        const n=this.gs.getNode(r,c);
+        if(n) full.push(n);
+        r+=dr; c+=dc;
+      }
+    }
+    full.push(jumpPath[jumpPath.length-1]);
+    return full;
+  }
   async animatePath(path, token, delay){
     if(!path||!path.length) return;
     if(delay===0){ for(const n of path){ if(this.gs.isStart(n)||this.gs.isTarget(n)) continue; n.state='path'; } this.gs.syncAllImmediate(); return; }
@@ -572,11 +589,22 @@ class PathfindingEngine{
       if(this.gs.isTarget(cur)) return cur;
       if(delay!==0) await this.maybeDelay(token,delay);
       for(const dir of dirs){
-        const jp=this.jump(cur,dir); if(!jp) continue; const kk=`${jp.r},${jp.c}`; if(closed.has(kk)) continue;
-        const dist=Math.abs(jp.r-cur.r)+Math.abs(jp.c-cur.c);
-        let wCost=0; let rr=cur.r, cc=cur.c; for(let s=0;s<dist;s++){ rr+=dir[0]; cc+=dir[1]; wCost+=this.gs.nodeCost(this.gs.grid[rr][cc]); }
-        const tentative=cur.g+wCost;
-        if(tentative<jp.g){ jp.parent=cur; jp.g=tentative; jp.h=this.gs.heuristic(jp,t); jp.f=jp.g+jp.h; this.markFrontier(jp,delay); pq.push(jp); }
+        const jp=this.jump(cur,dir);
+        if(jp){
+          const kk=`${jp.r},${jp.c}`; if(!closed.has(kk)){
+            const dist=Math.abs(jp.r-cur.r)+Math.abs(jp.c-cur.c);
+            let wCost=0; let rr=cur.r, cc=cur.c; for(let s=0;s<dist;s++){ rr+=dir[0]; cc+=dir[1]; wCost+=this.gs.nodeCost(this.gs.grid[rr][cc]); }
+            const tentative=cur.g+wCost;
+            if(tentative<jp.g){ jp.parent=cur; jp.g=tentative; jp.h=this.gs.heuristic(jp,t); jp.f=jp.g+jp.h; this.markFrontier(jp,delay); pq.push(jp); }
+          }
+        }
+        const nr=cur.r+dir[0], nc=cur.c+dir[1];
+        const nb=this.gs.getNode(nr,nc);
+        if(!nb||nb.type==='wall') continue;
+        const kk2=`${nb.r},${nb.c}`; if(closed.has(kk2)) continue;
+        if(jp && jp.r===nb.r && jp.c===nb.c) continue;
+        const tentative2=cur.g+this.gs.nodeCost(nb);
+        if(tentative2<nb.g){ nb.parent=cur; nb.g=tentative2; nb.h=this.gs.heuristic(nb,t); nb.f=nb.g+nb.h; this.markFrontier(nb,delay); pq.push(nb); }
       }
     }
     return null;
@@ -804,6 +832,7 @@ class UIController{
       else{
         let path;
         if(algo==='bibfs'||algo==='biastar') path=this.pe.reconstructBidirectional(end);
+        else if(algo==='jps'){ const jp=this.pe.reconstruct(end); path=this.pe.expandJPSPath(jp); }
         else path=this.pe.reconstruct(end);
         this.setStatus('FOUND');
         await this.pe.animatePath(path,token,delay); if(token.cancelled) return; this.gs.flushQueue();
