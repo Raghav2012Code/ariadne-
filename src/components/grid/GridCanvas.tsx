@@ -66,10 +66,12 @@ export function GridCanvas() {
 
   const getCellFromPoint = (x: number, y: number) => {
     const el = document.elementFromPoint(x, y) as HTMLElement | null;
-    const cell = el?.closest("[data-cell]") as HTMLElement | null;
+    const cell = el?.closest("[data-node]") as HTMLElement | null;
     if (!cell) return null;
-    const r = parseInt(cell.dataset.r ?? "", 10);
-    const c = parseInt(cell.dataset.c ?? "", 10);
+    const attr = cell.getAttribute("data-node");
+    if (!attr) return null;
+    const [rStr, cStr] = attr.split("-");
+    const r = parseInt(rStr, 10), c = parseInt(cStr, 10);
     if (Number.isNaN(r) || Number.isNaN(c)) return null;
     return { r, c };
   };
@@ -79,10 +81,11 @@ export function GridCanvas() {
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isVisualizing) return;
     const target = e.target as HTMLElement;
-    const cell = target.closest("[data-cell]") as HTMLElement | null;
+    const cell = target.closest("[data-node]") as HTMLElement | null;
     if (!cell) return;
-    const r = parseInt(cell.dataset.r ?? "", 10);
-    const c = parseInt(cell.dataset.c ?? "", 10);
+    const attr = cell.getAttribute("data-node") ?? "";
+    const [rStr, cStr] = attr.split("-");
+    const r = parseInt(rStr, 10), c = parseInt(cStr, 10);
     if (r === startNode.r && c === startNode.c) { dragRef.current = "start"; return; }
     if (r === targetNode.r && c === targetNode.c) { dragRef.current = "target"; return; }
     dragRef.current = null;
@@ -104,12 +107,7 @@ export function GridCanvas() {
       return;
     }
     if (!mouseDownRef.current) return;
-    const cell = (e.target as HTMLElement).closest("[data-cell]") as HTMLElement | null;
-    // also support elementFromPoint for fast drag
-    const p = getCellFromPoint(e.clientX, e.clientY) ?? (() => {
-      if (!cell) return null;
-      return { r: parseInt(cell.dataset.r ?? "", 10), c: parseInt(cell.dataset.c ?? "", 10) };
-    })();
+    const p = getCellFromPoint(e.clientX, e.clientY);
     if (!p) return;
     const isWall = !(e.shiftKey || mouseButtonRef.current === 2);
     setWall(p, isWall);

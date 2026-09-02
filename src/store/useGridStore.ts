@@ -15,6 +15,8 @@ import { astar } from "@/lib/algorithms/search/astar";
 import { greedy } from "@/lib/algorithms/search/greedy";
 import { bidirectionalBFS, bidirectionalAStar } from "@/lib/algorithms/search/bidirectional";
 import { updateUrl } from "@/lib/utils/urlState";
+import { GridAnimator } from "@/lib/animations/gridAnimator";
+import type { AnimationSpeed, Coordinate } from "@/types/animation";
 
 type StoreState = {
   rows: number;
@@ -32,6 +34,7 @@ type StoreState = {
   executionTimeMs: number;
   abortController: AbortController | null;
   densityKey: string;
+  activeAnimationToken: number;
 };
 
 type StoreActions = {
@@ -44,6 +47,7 @@ type StoreActions = {
   generateMaze: () => Promise<void>;
   runSearch: () => Promise<void>;
   abort: () => void;
+  cancelAnimation: () => void;
   clearPath: () => void;
   clearWalls: () => void;
   fullReset: () => void;
@@ -54,6 +58,16 @@ type StoreActions = {
 
 function getDensityPreset(key: string): { rows: number; cols: number } {
   return DensityPresets[key] ?? DensityPresets.balanced;
+}
+
+function speedToAnimation(speed: SpeedType): AnimationSpeed {
+  switch (speed) {
+    case "slow": return "SLOW";
+    case "normal": return "MEDIUM";
+    case "fast": return "FAST";
+    case "instant": return "INSTANT";
+    default: return "MEDIUM";
+  }
 }
 
 export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
@@ -72,6 +86,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   executionTimeMs: 0,
   abortController: null,
   densityKey: "balanced",
+  activeAnimationToken: 0,
 
   initializeGrid: (rows, cols) => {
     const st = get();
@@ -83,7 +98,8 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     const target: Point = { r: r - 2, c: c - 2 };
     grid[start.r][start.c].type = "start";
     grid[target.r][target.c].type = "target";
-    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0 });
+    GridAnimator.resetCellStyles();
+    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, activeAnimationToken: get().activeAnimationToken + 1 });
   },
 
   hydrateFromUrl: (algo, diff, speed) => {
@@ -95,11 +111,13 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   },
 
   setAlgorithm: (a) => {
+    get().cancelAnimation();
     set({ selectedAlgorithm: a });
     const s = get();
     updateUrl({ algo: s.selectedAlgorithm, difficulty: s.selectedDifficulty, speed: s.speed });
   },
   setDifficulty: (d) => {
+    get().cancelAnimation();
     set({ selectedDifficulty: d });
     const s = get();
     updateUrl({ algo: s.selectedAlgorithm, difficulty: s.selectedDifficulty, speed: s.speed });
@@ -111,43 +129,51 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   },
   setEuclidean: (v) => set({ isEuclidean: v }),
   setDensity: (key) => {
+    get().cancelAnimation();
     const preset = getDensityPreset(key);
     set({ densityKey: key });
     get().initializeGrid(preset.rows, preset.cols);
   },
 
-  abort: () => {
+  cancelAnimation: () => {
+    GridAnimator.cancelAnimation();
+    GridAnimator.resetCellStyles();
     const { abortController } = get();
     if (abortController) abortController.abort();
-    set({ abortController: null, status: "IDLE" });
+    set((s) => ({ activeAnimationToken: s.activeAnimationToken + 1, abortController: null, status: "IDLE" }));
+  },
+
+  abort: () => {
+    get().cancelAnimation();
   },
 
   clearPath: () => {
-    const { grid, abortController } = get();
-    if (abortController) abortController.abort();
+    get().cancelAnimation();
+    const { grid } = get();
     for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
       const n = grid[r][c];
       if (n.state === "visited" || n.state === "frontier" || n.state === "path") {
         n.state = "unvisited"; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null; n.gB = Infinity;
       }
     }
-    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+    GridAnimator.resetCellStyles();
+    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
   },
 
   clearWalls: () => {
-    const { grid, startNode, targetNode, abortController } = get();
-    if (abortController) abortController.abort();
+    get().cancelAnimation();
+    const { grid, startNode, targetNode } = get();
     for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
       const n = grid[r][c]; n.type = "empty"; n.state = "unvisited"; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null; n.gB = Infinity;
     }
     grid[startNode.r][startNode.c].type = "start";
     grid[targetNode.r][targetNode.c].type = "target";
-    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+    GridAnimator.resetCellStyles();
+    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
   },
 
   fullReset: () => {
-    const { abortController } = get();
-    if (abortController) abortController.abort();
+    get().cancelAnimation();
     const st = get();
     const preset = getDensityPreset(st.densityKey);
     const r = preset.rows % 2 === 0 ? preset.rows + 1 : preset.rows;
@@ -157,7 +183,8 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     const target: Point = { r: r - 2, c: c - 2 };
     grid[start.r][start.c].type = "start";
     grid[target.r][target.c].type = "target";
-    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+    GridAnimator.resetCellStyles();
+    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
   },
 
   moveNode: (type, to) => {
@@ -188,26 +215,41 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
 
   generateMaze: async () => {
     const st = get();
-    if (st.abortController) st.abortController.abort();
+    get().cancelAnimation();
     const controller = new AbortController();
     set({ abortController: controller, status: "GENERATING" });
-    const delay = SpeedDelays[st.speed];
-    // Clear path but keep walls will be overwritten
     for (let r = 0; r < st.grid.length; r++) for (let c = 0; c < st.grid[0].length; c++) {
       const n = st.grid[r][c]; n.state = "unvisited"; n.parent = null; n.parentB = null; n.g = Infinity; n.gB = Infinity;
     }
     const start = { ...st.startNode }, target = { ...st.targetNode };
+    const animSpeed = speedToAnimation(st.speed);
+    // Collect walls before generation for diff
+    const beforeWalls = new Set<string>();
+    for (let r = 0; r < st.grid.length; r++) for (let c = 0; c < st.grid[0].length; c++) if (st.grid[r][c].type === "wall") beforeWalls.add(`${r}-${c}`);
     try {
       const diff = st.selectedDifficulty;
       if (diff === "easy") {
-        await cellularAutomata(st.grid, start, target, controller.signal, delay);
+        await cellularAutomata(st.grid, start, target, controller.signal, 0);
       } else if (diff === "medium") {
-        await randomizedPrims(st.grid, start, target, controller.signal, delay);
+        await randomizedPrims(st.grid, start, target, controller.signal, 0);
       } else {
-        await recursiveBacktracker(st.grid, start, target, controller.signal, delay);
+        await recursiveBacktracker(st.grid, start, target, controller.signal, 0);
       }
       if (controller.signal.aborted) return;
-      set({ grid: [...st.grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+      // Determine carved walls for animation
+      const carved: Coordinate[] = [];
+      for (let r = 0; r < st.grid.length; r++) for (let c = 0; c < st.grid[0].length; c++) {
+        const key = `${r}-${c}`;
+        const n = st.grid[r][c];
+        if (n.type === "wall" && !beforeWalls.has(key)) carved.push({ row: r, col: c });
+        if (n.type === "empty" && beforeWalls.has(key)) carved.push({ row: r, col: c });
+      }
+      // Update grid state for React (walls)
+      set({ grid: [...st.grid.map((row) => [...row])] });
+      // Animate maze pop
+      await GridAnimator.animateMazeGeneration(carved, animSpeed);
+      if (controller.signal.aborted) return;
+      set({ status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
     } catch (e) {
       if ((e as DOMException).name === "AbortError") return;
       set({ status: "IDLE", abortController: null });
@@ -217,25 +259,26 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   runSearch: async () => {
     const st = get();
     if (st.abortController) st.abortController.abort();
-    // Clear previous path
+    GridAnimator.cancelAnimation();
+    // Clear previous path visuals
     for (let r = 0; r < st.grid.length; r++) for (let c = 0; c < st.grid[0].length; c++) {
       const n = st.grid[r][c];
       if (n.state === "visited" || n.state === "frontier" || n.state === "path") {
         n.state = "unvisited"; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null; n.gB = Infinity;
       }
     }
+    GridAnimator.resetCellStyles();
     const controller = new AbortController();
-    set({ abortController: controller, status: "SEARCHING", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0 });
-    const delay = SpeedDelays[st.speed];
-    let visitedCount = 0;
+    set({ abortController: controller, status: "SEARCHING", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, activeAnimationToken: get().activeAnimationToken + 1 });
+    const animSpeed = speedToAnimation(st.speed);
+    const t0 = performance.now();
+    const visitedOrder: Coordinate[] = [];
     const onVisit = (n: CellNode) => {
       if (n.r === st.startNode.r && n.c === st.startNode.c) return;
       if (n.r === st.targetNode.r && n.c === st.targetNode.c) return;
       if (n.state === "visited") return;
       n.state = "visited";
-      visitedCount++;
-      // Directly update telemetry without full re-render of grid via store
-      // Use requestAnimationFrame batch would be better, but we update count via store
+      visitedOrder.push({ row: n.r, col: n.c });
     };
     const onFrontier = (n: CellNode) => {
       if (n.r === st.startNode.r && n.c === st.startNode.c) return;
@@ -243,47 +286,38 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       if (n.state !== "unvisited") return;
       n.state = "frontier";
     };
-    const t0 = performance.now();
-    // Telemetry interval to avoid 1000+ re-renders
-    let telemetryTimer: number | null = null;
-    if (delay > 0) {
-      telemetryTimer = window.setInterval(() => {
-        set({ nodesVisitedCount: visitedCount });
-      }, 50);
-    }
     try {
       let end: CellNode | null = null;
       const eu = st.isEuclidean;
+      // Run algorithm in memory with zero delay to collect order
       switch (st.selectedAlgorithm) {
-        case "bfs": end = await bfs(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier); break;
-        case "dfs": end = await dfs(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier); break;
-        case "dijkstra": end = await dijkstra(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier); break;
-        case "astar": end = await astar(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier, eu); break;
-        case "greedy": end = await greedy(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier, eu); break;
-        case "bibfs": end = await bidirectionalBFS(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier); break;
-        case "biastar": end = await bidirectionalAStar(st.grid, st.startNode, st.targetNode, controller.signal, delay, onVisit, onFrontier, eu); break;
+        case "bfs": end = await bfs(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier); break;
+        case "dfs": end = await dfs(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier); break;
+        case "dijkstra": end = await dijkstra(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier); break;
+        case "astar": end = await astar(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier, eu); break;
+        case "greedy": end = await greedy(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier, eu); break;
+        case "bibfs": end = await bidirectionalBFS(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier); break;
+        case "biastar": end = await bidirectionalAStar(st.grid, st.startNode, st.targetNode, controller.signal, 0, onVisit, onFrontier, eu); break;
       }
       if (controller.signal.aborted) return;
-      if (telemetryTimer) clearInterval(telemetryTimer);
       const t1 = performance.now();
       if (!end) {
-        set({ status: "UNREACHABLE", nodesVisitedCount: visitedCount, executionTimeMs: t1 - t0, abortController: null, grid: [...st.grid.map((row) => [...row])] });
+        set({ status: "UNREACHABLE", nodesVisitedCount: visitedOrder.length, executionTimeMs: t1 - t0, abortController: null });
+        // Still animate visited to show unreachable
+        await GridAnimator.animateVisitedNodes(visitedOrder, animSpeed, () => {
+          set({ nodesVisitedCount: visitedOrder.length });
+        });
         return;
       }
       // Reconstruct path
       let path: CellNode[] = [];
       if (st.selectedAlgorithm === "bibfs" || st.selectedAlgorithm === "biastar") {
-        // bidirectional reconstruct
         const fwd: CellNode[] = [];
         let cur: CellNode | null = end;
-        const visitedParents = new Map<string, CellNode>();
-        for (let r = 0; r < st.grid.length; r++) for (let c = 0; c < st.grid[0].length; c++) visitedParents.set(`${r},${c}`, st.grid[r][c]);
-        // fwd via parent
-        let curF: CellNode | null = end;
-        while (curF) {
-          fwd.push(curF);
-          const p: Point | null = curF.parent;
-          curF = p ? (getNode(st.grid, p) as CellNode | null) : null;
+        while (cur) {
+          fwd.push(cur);
+          const p: Point | null = cur.parent;
+          cur = p ? (getNode(st.grid, p) as CellNode | null) : null;
         }
         fwd.reverse();
         const bwd: CellNode[] = [];
@@ -293,58 +327,48 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
           const pb: Point | null = cb.parentB;
           cb = pb ? (getNode(st.grid, pb) as CellNode | null) : null;
         }
-        // dedup meeting node
         if (fwd.length && bwd.length && fwd[fwd.length - 1].r === bwd[0].r && fwd[fwd.length - 1].c === bwd[0].c) bwd.shift();
         path = [...fwd, ...bwd];
       } else {
-        let cur2: CellNode | null = end;
-        while (cur2) {
-          path.push(cur2);
-          const p2: Point | null = cur2.parent;
-          cur2 = p2 ? (getNode(st.grid, p2) as CellNode | null) : null;
+        let cur: CellNode | null = end;
+        while (cur) {
+          path.push(cur);
+          const p: Point | null = cur.parent;
+          cur = p ? (getNode(st.grid, p) as CellNode | null) : null;
         }
         path.reverse();
       }
-      // Animate path
-      if (delay === 0) {
-        for (const n of path) {
-          if ((n.r === st.startNode.r && n.c === st.startNode.c) || (n.r === st.targetNode.r && n.c === st.targetNode.c)) continue;
-          n.state = "path";
-        }
-      } else {
-        for (const n of path) {
-          if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
-          if ((n.r === st.startNode.r && n.c === st.startNode.c) || (n.r === st.targetNode.r && n.c === st.targetNode.c)) continue;
-          n.state = "path";
-          // force a micro paint
-          await new Promise<void>((r) => setTimeout(r, Math.max(6, delay * 1.2)));
-        }
-      }
+      const pathCoords: Coordinate[] = path
+        .filter((n) => !(n.r === st.startNode.r && n.c === st.startNode.c) && !(n.r === st.targetNode.r && n.c === st.targetNode.c))
+        .map((n) => ({ row: n.r, col: n.c }));
       const t2 = performance.now();
-      // Cost for weighted
+      // Animate visited then path via GridAnimator (60-120 FPS, no React re-render)
+      await GridAnimator.animateVisitedNodes(visitedOrder, animSpeed, () => {
+        set({ nodesVisitedCount: visitedOrder.length });
+      });
+      if (controller.signal.aborted) return;
+      await GridAnimator.animateShortestPath(pathCoords, () => {
+        set({ pathLength: path.length - 1 });
+      });
+      if (controller.signal.aborted) return;
+      const t3 = performance.now();
       let cost = 0;
       for (let i = 1; i < path.length; i++) cost += path[i].type === "weight" ? 5 : 1;
-      const isWeighted = st.selectedAlgorithm === "dijkstra" || st.selectedAlgorithm === "astar" || st.selectedAlgorithm === "biastar";
-      const labelLen = isWeighted && cost !== path.length - 1 ? path.length - 1 : path.length - 1;
-      void labelLen;
       set({
         status: "FOUND",
-        nodesVisitedCount: visitedCount,
+        nodesVisitedCount: visitedOrder.length,
         pathLength: path.length - 1,
-        executionTimeMs: t2 - t0,
+        executionTimeMs: t3 - t0,
         abortController: null,
-        grid: [...st.grid.map((row) => [...row])],
+        activeAnimationToken: get().activeAnimationToken + 1,
       });
+      void cost;
     } catch (e) {
       if ((e as DOMException).name === "AbortError") {
-        if (telemetryTimer) clearInterval(telemetryTimer);
         set({ abortController: null, status: "IDLE" });
         return;
       }
-      if (telemetryTimer) clearInterval(telemetryTimer);
       set({ status: "UNREACHABLE", abortController: null });
-    } finally {
-      if (telemetryTimer) clearInterval(telemetryTimer);
     }
   },
 }));

@@ -13,5 +13,5 @@ yarn-error.log*
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
-next-start.log
-next-start.log.err
+next-start*.log
+next-start*.log.err
