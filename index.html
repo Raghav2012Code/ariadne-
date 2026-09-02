@@ -3,138 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ariadne — 2D Maze Generator & Search Visualizer</title>
-  <meta name="description" content="Ariadne: Interactive Maze Generation and Pathfinding Algorithm Visualizer" />
+  <title>Ariadne — 2D Maze & Search Visualizer</title>
+  <meta name="description" content="Ariadne: Minimalist Maze Generation and Pathfinding Visualizer" />
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Header Toolbar -->
   <header class="header">
-    <div class="header-inner">
+    <div class="header-top">
       <div class="brand">
-        <div class="brand-mark">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <div class="brand-mark" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
             <rect width="28" height="28" rx="7" fill="#6366f1"/>
-            <path d="M8 14 L14 8 L20 14 L14 20 Z" stroke="white" stroke-width="1.8" fill="none" stroke-linejoin="round"/>
-            <circle cx="14" cy="14" r="2.2" fill="white"/>
+            <path d="M7.5 14 L14 7.5 L20.5 14 L14 20.5 Z" stroke="white" stroke-width="1.7" fill="none" stroke-linejoin="round"/>
+            <circle cx="14" cy="14" r="2.1" fill="white"/>
+            <circle cx="14" cy="14" r="0.9" fill="#6366f1"/>
           </svg>
         </div>
         <div class="brand-text">
           <h1>Ariadne</h1>
-          <span>Maze Generator & Search Visualizer</span>
+          <span>2D Maze & Search</span>
         </div>
       </div>
 
-      <div class="controls">
-        <div class="control-group">
+      <div class="header-controls">
+        <div class="control">
           <label for="algoSelect">Algorithm</label>
           <select id="algoSelect" class="select">
-            <option value="bfs">Breadth-First Search (BFS)</option>
-            <option value="dfs">Depth-First Search (DFS)</option>
-            <option value="dijkstra">Dijkstra's Algorithm</option>
+            <option value="bfs">BFS</option>
+            <option value="dfs">DFS</option>
+            <option value="dijkstra">Dijkstra</option>
             <option value="astar" selected>A* Search</option>
-            <option value="greedy">Greedy Best-First Search</option>
+            <option value="greedy">Greedy BFS</option>
           </select>
         </div>
-
-        <div class="control-group">
-          <label for="mazeSelect">Maze</label>
+        <div class="control">
+          <label for="mazeSelect">Generator</label>
           <select id="mazeSelect" class="select">
-            <option value="backtracking">Recursive Backtracking (DFS)</option>
-            <option value="prim">Randomized Prim's</option>
-            <option value="division">Recursive Division</option>
-            <option value="random">Random Clutter (35%)</option>
+            <option value="backtracking" selected>Backtracking</option>
+            <option value="prim">Prim's</option>
+            <option value="division">Division</option>
+            <option value="random">Clutter</option>
           </select>
         </div>
-
-        <div class="control-group">
-          <label for="gridSizeSelect">Grid Size</label>
-          <select id="gridSizeSelect" class="select">
-            <option value="small">Small — 15 × 25</option>
-            <option value="medium" selected>Medium — 25 × 45</option>
-            <option value="large">Large — 35 × 65</option>
-          </select>
+        <div class="control density-control">
+          <label>Density</label>
+          <div class="segmented" role="group" aria-label="Density">
+            <button class="seg" data-density="focused" type="button">Focused</button>
+            <button class="seg active" data-density="standard" type="button">Standard</button>
+            <button class="seg" data-density="compact" type="button">Compact</button>
+          </div>
         </div>
-
-        <div class="control-group speed-group">
-          <label for="speedRange">Speed: <span id="speedLabel">Medium</span></label>
-          <input id="speedRange" type="range" min="0" max="3" value="1" step="1" />
-        </div>
-
-        <div class="toggles">
-          <label class="toggle">
-            <input type="checkbox" id="diagonalToggle" />
-            <span class="toggle-slider"></span>
-            <span class="toggle-text">Diagonal</span>
-          </label>
-          <label class="toggle">
-            <input type="checkbox" id="weightToggle" />
-            <span class="toggle-slider"></span>
-            <span class="toggle-text">Weight (Mud ×5)</span>
-          </label>
+        <div class="control speed-control">
+          <label for="speedRange">Speed — <span id="speedLabel">Normal</span></label>
+          <input id="speedRange" type="range" min="0" max="3" value="2" step="1" />
         </div>
       </div>
 
-      <div class="actions">
-        <button id="visualizeBtn" class="btn btn-primary">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 3L12 8L5 13V3Z" fill="currentColor"/></svg>
-          <span id="visualizeLabel">Visualize A*</span>
+      <div class="header-actions">
+        <button id="visualizeBtn" class="btn btn-primary" type="button">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><path d="M3 2.2 L10.2 6.5 L3 10.8 Z" fill="currentColor"/></svg>
+          <span id="visualizeLabel">Visualize</span>
         </button>
-        <button id="genMazeBtn" class="btn btn-secondary">Generate Maze</button>
-        <button id="clearPathBtn" class="btn btn-ghost">Clear Path</button>
-        <button id="clearBoardBtn" class="btn btn-ghost">Clear Board</button>
-        <button id="resetBtn" class="btn btn-ghost">Reset</button>
+        <button id="genMazeBtn" class="btn btn-soft" type="button">New Maze</button>
+        <button id="clearPathBtn" class="btn btn-ghost" type="button">Clear Path</button>
+        <button id="clearWallsBtn" class="btn btn-ghost" type="button">Clear Walls</button>
       </div>
+    </div>
+
+    <div class="legend" aria-label="Legend">
+      <span class="legend-item"><i class="swatch swatch-start"></i>Start</span>
+      <span class="legend-item"><i class="swatch swatch-target"></i>Target</span>
+      <span class="legend-item"><i class="swatch swatch-unvisited"></i>Unvisited</span>
+      <span class="legend-item"><i class="swatch swatch-visited"></i>Visited</span>
+      <span class="legend-item"><i class="swatch swatch-frontier"></i>Frontier</span>
+      <span class="legend-item"><i class="swatch swatch-path"></i>Path</span>
+      <span class="legend-item"><i class="swatch swatch-wall"></i>Wall</span>
+      <span class="legend-item"><i class="swatch swatch-weight"></i>Weight</span>
+      <span class="legend-hint">Drag Start/Target • Left-drag Wall • Shift/Right Erase</span>
     </div>
   </header>
 
-  <!-- Legend -->
-  <section class="legend" aria-label="Legend">
-    <div class="legend-item"><span class="swatch swatch-start"></span> Start</div>
-    <div class="legend-item"><span class="swatch swatch-target"></span> Target</div>
-    <div class="legend-item"><span class="swatch swatch-unvisited"></span> Unvisited</div>
-    <div class="legend-item"><span class="swatch swatch-visited"></span> Visited</div>
-    <div class="legend-item"><span class="swatch swatch-frontier"></span> Frontier</div>
-    <div class="legend-item"><span class="swatch swatch-path"></span> Shortest Path</div>
-    <div class="legend-item"><span class="swatch swatch-wall"></span> Wall</div>
-    <div class="legend-item"><span class="swatch swatch-weight"></span> Weight (×5)</div>
-    <div class="legend-hint">Left-drag: Wall &nbsp;|&nbsp; Shift/ Right-drag: Erase &nbsp;|&nbsp; Drag Start/Target to move</div>
-  </section>
-
-  <!-- Grid Board -->
-  <main class="board-wrap">
+  <main class="stage" id="stage">
     <div id="grid" class="grid" role="grid" aria-label="Maze grid"></div>
   </main>
 
-  <!-- Analytics Bar -->
-  <footer class="analytics">
-    <div class="metric">
-      <span class="metric-label">Nodes Visited</span>
-      <span id="metricVisited" class="metric-value">0</span>
-    </div>
-    <div class="metric">
-      <span class="metric-label">Path Length</span>
-      <span id="metricPath" class="metric-value">—</span>
-    </div>
-    <div class="metric">
-      <span class="metric-label">Time</span>
-      <span id="metricTime" class="metric-value">0.00 ms</span>
-    </div>
-    <div class="metric">
-      <span class="metric-label">Status</span>
+  <footer class="ribbon" aria-label="Metrics">
+    <div class="ribbon-inner">
+      <div class="metric"><span class="k">Visited</span><span id="metricVisited" class="v">0</span></div>
+      <div class="metric"><span class="k">Path</span><span id="metricPath" class="v">—</span></div>
+      <div class="metric"><span class="k">Time</span><span id="metricTime" class="v">0.00 ms</span></div>
+      <div class="ribbon-divider"></div>
       <span id="statusBadge" class="badge badge-idle">Idle</span>
-    </div>
-    <div class="metric">
-      <span class="metric-label">Visited Animation</span>
-      <span class="metric-value visited-demo"></span>
+      <span class="ribbon-hint">Space: Visualize • C: Clear path • R: New maze</span>
     </div>
   </footer>
 
-  <!-- Toast -->
   <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-
   <script src="app.js"></script>
 </body>
 </html>
