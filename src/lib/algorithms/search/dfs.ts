@@ -10,6 +10,11 @@ export async function dfs(
   onVisit: (n: CellNode) => void,
   onFrontier: (n: CellNode) => void
 ): Promise<CellNode | null> {
+  // Reset search state so the algorithm is correct on grid reuse (stale
+  // parents from a previous run must not leak into this one).
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
+    const n = grid[r][c]; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null;
+  }
   const s = grid[start.r][start.c];
   const stack: CellNode[] = [s];
   // Mark seen on push (not pop): every cell is queued at most once, so the
