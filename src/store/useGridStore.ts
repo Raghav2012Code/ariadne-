@@ -191,17 +191,25 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
 
   moveNode: (type, to) => {
     const { grid, startNode, targetNode } = get();
-    if (grid[to.r][to.c].type === "wall") return;
+    // Bounds-check: to comes from pointer math and must never index blindly.
+    const dest = getNode(grid, to);
+    if (!dest || dest.type === "wall") return;
+    // Never allow one anchor to overwrite the other.
+    if (type === "start" && to.r === targetNode.r && to.c === targetNode.c) return;
+    if (type === "target" && to.r === startNode.r && to.c === startNode.c) return;
+    // Immutable cell updates so memoized GridCells (which compare by type)
+    // re-render: the previous objects are never mutated in place.
+    const newGrid = grid.map((row) => [...row]);
     if (type === "start") {
       const old = grid[startNode.r][startNode.c];
-      old.type = "empty";
-      grid[to.r][to.c].type = "start";
-      set({ grid: [...grid.map((row) => [...row])], startNode: { ...to } });
+      newGrid[startNode.r][startNode.c] = { ...old, type: "empty" };
+      newGrid[to.r][to.c] = { ...dest, type: "start" };
+      set({ grid: newGrid, startNode: { ...to } });
     } else {
       const old = grid[targetNode.r][targetNode.c];
-      old.type = "empty";
-      grid[to.r][to.c].type = "target";
-      set({ grid: [...grid.map((row) => [...row])], targetNode: { ...to } });
+      newGrid[targetNode.r][targetNode.c] = { ...old, type: "empty" };
+      newGrid[to.r][to.c] = { ...dest, type: "target" };
+      set({ grid: newGrid, targetNode: { ...to } });
     }
   },
 
@@ -210,9 +218,10 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     if ((p.r === startNode.r && p.c === startNode.c) || (p.r === targetNode.r && p.c === targetNode.c)) return;
     const n = getNode(grid, p);
     if (!n) return;
-    n.type = isWall ? "wall" : "empty";
-    n.state = "unvisited";
-    set({ grid: [...grid.map((row) => [...row])] });
+    // Immutable update (see moveNode): clone the cell so memo re-renders.
+    const newGrid = grid.map((row) => [...row]);
+    newGrid[p.r][p.c] = { ...n, type: isWall ? "wall" : "empty", state: "unvisited" };
+    set({ grid: newGrid });
   },
 
   generateMaze: async () => {
