@@ -362,7 +362,6 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       const pathCoords: Coordinate[] = path
         .filter((n) => !(n.r === st.startNode.r && n.c === st.startNode.c) && !(n.r === st.targetNode.r && n.c === st.targetNode.c))
         .map((n) => ({ row: n.r, col: n.c }));
-      const t2 = performance.now();
       // Animate visited then path via GridAnimator (60-120 FPS, no React re-render)
       await GridAnimator.animateVisitedNodes(visitedOrder, animSpeed, () => {
         set({ nodesVisitedCount: visitedOrder.length });
@@ -372,18 +371,16 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
         set({ pathLength: path.length - 1 });
       });
       if (controller.signal.aborted) return;
-      const t3 = performance.now();
-      let cost = 0;
-      for (let i = 1; i < path.length; i++) cost += path[i].type === "weight" ? 5 : 1;
+      // Latency measures algorithm compute time (t1 - t0), not wall-clock
+      // time including the visualization animation above.
       set({
         status: "FOUND",
         nodesVisitedCount: visitedOrder.length,
         pathLength: path.length - 1,
-        executionTimeMs: t3 - t0,
+        executionTimeMs: t1 - t0,
         abortController: null,
         activeAnimationToken: get().activeAnimationToken + 1,
       });
-      void cost;
     } catch (e) {
       if ((e as DOMException).name === "AbortError") {
         set({ abortController: null, status: "IDLE" });
