@@ -16,7 +16,6 @@ export async function astar(
     const n = grid[r][c]; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null;
   }
   const s = grid[start.r][start.c];
-  const t = grid[target.r][target.c];
   s.g = 0; s.h = heuristic(start, target, euclidean); s.f = s.h;
   const pq = new MinHeap<CellNode>((a, b) => a.f - b.f);
   pq.push(s);
