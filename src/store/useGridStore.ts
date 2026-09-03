@@ -35,6 +35,7 @@ type StoreState = {
   abortController: AbortController | null;
   densityKey: string;
   activeAnimationToken: number;
+  gridVersion: number;
 };
 
 type StoreActions = {
@@ -87,6 +88,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   abortController: null,
   densityKey: "balanced",
   activeAnimationToken: 0,
+  gridVersion: 0,
 
   initializeGrid: (rows, cols) => {
     const st = get();
@@ -236,18 +238,28 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
         await recursiveBacktracker(st.grid, start, target, controller.signal, 0);
       }
       if (controller.signal.aborted) return;
-      // Determine carved walls for animation
-      const carved: Coordinate[] = [];
+      // Diff newly-added walls for the pop animation. Cells that were cleared
+      // back to empty must NOT be styled as walls (that desyncs visuals).
+      const addedWalls: Coordinate[] = [];
       for (let r = 0; r < st.grid.length; r++) for (let c = 0; c < st.grid[0].length; c++) {
-        const key = `${r}-${c}`;
         const n = st.grid[r][c];
-        if (n.type === "wall" && !beforeWalls.has(key)) carved.push({ row: r, col: c });
-        if (n.type === "empty" && beforeWalls.has(key)) carved.push({ row: r, col: c });
+        if (n.type === "wall" && !beforeWalls.has(`${r}-${c}`)) addedWalls.push({ row: r, col: c });
       }
-      // Update grid state for React (walls)
-      set({ grid: [...st.grid.map((row) => [...row])] });
-      // Animate maze pop
-      await GridAnimator.animateMazeGeneration(carved, animSpeed);
+      // Maze generators mutate nodes in place, which memoized GridCells would
+      // not pick up. Bump gridVersion to remount the canvas with correct types.
+      set({ grid: [...st.grid.map((row) => [...row])], gridVersion: get().gridVersion + 1 });
+      // Wait for the remounted grid to commit before querying the DOM.
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; resolve(); } };
+        if (typeof requestAnimationFrame !== "undefined") {
+          requestAnimationFrame(() => requestAnimationFrame(finish));
+        }
+        setTimeout(finish, 100);
+      });
+      if (controller.signal.aborted) return;
+      // Animate only the newly-added walls.
+      await GridAnimator.animateMazeGeneration(addedWalls, animSpeed);
       if (controller.signal.aborted) return;
       set({ status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
     } catch (e) {

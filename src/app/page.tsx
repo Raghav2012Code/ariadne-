@@ -22,6 +22,7 @@ export default function Page() {
   const generateMaze = useGridStore((s) => s.generateMaze);
   const hydrateFromUrl = useGridStore((s) => s.hydrateFromUrl);
   const grid = useGridStore((s) => s.grid);
+  const gridVersion = useGridStore((s) => s.gridVersion);
 
   React.useEffect(() => {
     const qs = parseUrlState(window.location.search);
@@ -56,7 +57,7 @@ export default function Page() {
           Weighted cells cost 5 · Walls block movement
         </span>
       </div>
-      <GridCanvas key={`${grid.length}-${grid[0]?.length ?? 0}`} />
+      <GridCanvas key={`${grid.length}-${grid[0]?.length ?? 0}-${gridVersion}`} />
       <MetricsRibbon />
     </div>
   );
