@@ -15,23 +15,20 @@ export function GridCanvas() {
   const status = useGridStore((s) => s.status);
 
   const stageRef = React.useRef<HTMLDivElement>(null);
-  const gridRef = React.useRef<HTMLDivElement>(null);
   const [cellSize, setCellSize] = React.useState(16);
   const dragRef = React.useRef<"start" | "target" | null>(null);
   const mouseDownRef = React.useRef(false);
   const mouseButtonRef = React.useRef(0);
 
   const compute = React.useCallback(() => {
-    const stage = stageRef.current;
     const nav = document.getElementById("nav");
     const legend = document.getElementById("legend");
     const ribbon = document.getElementById("ribbon");
-    if (!stage) return;
-    const navH = nav?.offsetHeight ?? 64;
-    const legH = legend?.offsetHeight ?? 28;
-    const ribH = ribbon?.offsetHeight ?? 28;
-    const availW = window.innerWidth - 20;
-    const availH = window.innerHeight - navH - legH - ribH - 16;
+    const navH = nav?.offsetHeight ?? 110;
+    const legH = legend?.offsetHeight ?? 40;
+    const ribH = ribbon?.offsetHeight ?? 56;
+    const availW = window.innerWidth - 48;
+    const availH = window.innerHeight - navH - legH - ribH - 40;
     const size = calculateCellSize(availW, availH, cols, rows);
     setCellSize(size);
   }, [cols, rows]);
@@ -107,7 +104,16 @@ export function GridCanvas() {
       return;
     }
     if (!mouseDownRef.current) return;
-    const p = getCellFromPoint(e.clientX, e.clientY);
+    const target = e.target as HTMLElement;
+    const cell = target.closest("[data-node]") as HTMLElement | null;
+    let p: { r: number; c: number } | null = null;
+    if (cell) {
+      const attr = cell.getAttribute("data-node") ?? "";
+      const [rStr, cStr] = attr.split("-");
+      p = { r: parseInt(rStr, 10), c: parseInt(cStr, 10) };
+    } else {
+      p = getCellFromPoint(e.clientX, e.clientY);
+    }
     if (!p) return;
     const isWall = !(e.shiftKey || mouseButtonRef.current === 2);
     setWall(p, isWall);
@@ -122,12 +128,16 @@ export function GridCanvas() {
   if (grid.length === 0) return null;
 
   return (
-    <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden bg-black touch-none">
+    <div ref={stageRef} className="flex-1 min-h-0 flex items-center justify-center px-4 lg:px-6 py-4 overflow-hidden touch-none relative">
+      {/* ambient glows */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] rounded-full bg-indigo-500/[0.07] blur-[100px]" />
+        <div className="absolute inset-0 opacity-[0.35]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+      </div>
       <div
-        ref={gridRef}
         role="grid"
         aria-label="Maze grid"
-        className="grid gap-px bg-zinc-800 border border-zinc-800 rounded-lg p-0.5 shrink-0 select-none touch-none"
+        className="relative grid gap-[1.5px] rounded-2xl border border-white/10 bg-white/[0.06] p-2 shrink-0 select-none touch-none shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(255,255,255,.03)_inset] backdrop-blur-sm"
         style={
           {
             gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,

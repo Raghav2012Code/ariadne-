@@ -27,12 +27,16 @@ class GridAnimatorController {
     if (this.activeTimeline) {
       try {
         this.activeTimeline.pause();
-      } catch {}
+      } catch {
+        /* timeline already settled */
+      }
       this.activeTimeline = null;
     }
     try {
       anime.remove(".node-cell");
-    } catch {}
+    } catch {
+      /* nothing to remove */
+    }
     for (const t of this.pendingTimers) window.clearTimeout(t);
     this.pendingTimers = [];
   }
@@ -42,18 +46,13 @@ class GridAnimatorController {
     const nodes = document.querySelectorAll<HTMLElement>("[data-node]");
     nodes.forEach((el) => {
       if (el.classList.contains("is-start") || el.classList.contains("is-target")) return;
+      el.classList.remove("is-visited", "is-frontier", "is-path", "is-wall-anim");
       el.style.backgroundColor = "";
       el.style.transform = "";
       el.style.boxShadow = "";
       el.style.borderColor = "";
       el.style.borderRadius = "";
-      el.classList.remove("is-visited", "is-frontier", "is-path", "is-wall-anim");
-      // Reset to default Tailwind base via inline removal
-      el.style.removeProperty("background-color");
-      el.style.removeProperty("transform");
-      el.style.removeProperty("box-shadow");
-      el.style.removeProperty("border-color");
-      el.style.removeProperty("border-radius");
+      el.style.backgroundImage = "";
     });
   }
 
@@ -62,10 +61,12 @@ class GridAnimatorController {
     speed: AnimationSpeed,
     onComplete: () => void
   ): Promise<void> {
-    if (visitedOrder.length === 0) { onComplete(); return; }
-    const token = ++this.activeToken;
+    if (visitedOrder.length === 0) {
+      onComplete();
+      return;
+    }
     this.cancelAnimation();
-    this.activeToken = token;
+    const token = ++this.activeToken;
 
     if (speed === "INSTANT") {
       for (const coord of visitedOrder) {
@@ -74,6 +75,7 @@ class GridAnimatorController {
         if (!el || this.isStartOrTarget(el)) continue;
         el.classList.add("is-visited");
         el.style.backgroundColor = "#4338ca";
+        el.style.backgroundImage = "";
         el.style.borderColor = "#1e1b4b";
         el.style.transform = "scale(1)";
         el.style.borderRadius = "2px";
@@ -89,10 +91,16 @@ class GridAnimatorController {
       if (!el || this.isStartOrTarget(el)) continue;
       targets.push(el);
     }
-    if (targets.length === 0) { onComplete(); return; }
+    if (targets.length === 0) {
+      onComplete();
+      return;
+    }
 
     return new Promise<void>((resolve) => {
-      if (token !== this.activeToken) { resolve(); return; }
+      if (token !== this.activeToken) {
+        resolve();
+        return;
+      }
       const tl = anime.timeline({
         easing: "easeOutElastic(1, .8)",
         autoplay: true,
@@ -114,12 +122,9 @@ class GridAnimatorController {
         delay: anime.stagger(delayMs, { start: 0 }),
         easing: "easeOutElastic(1, .8)",
         update: () => {
-          if (token !== this.activeToken) {
-            tl.pause();
-          }
+          if (token !== this.activeToken) tl.pause();
         },
       });
-      // Fallback complete if anime doesn't fire
       const fallback = window.setTimeout(() => {
         if (token === this.activeToken) {
           onComplete();
@@ -134,21 +139,31 @@ class GridAnimatorController {
     pathNodes: Coordinate[],
     onComplete: () => void
   ): Promise<void> {
-    if (pathNodes.length === 0) { onComplete(); return; }
+    if (pathNodes.length === 0) {
+      onComplete();
+      return;
+    }
+    this.cancelAnimation();
     const token = ++this.activeToken;
     const targets: HTMLElement[] = [];
     for (const coord of pathNodes) {
       const el = this.queryNode(coord) as HTMLElement | null;
       if (!el || this.isStartOrTarget(el)) continue;
-      // Clear visited inline so path overrides cleanly
       el.style.backgroundColor = "";
+      el.style.backgroundImage = "";
       el.style.transform = "";
       targets.push(el);
     }
-    if (targets.length === 0) { onComplete(); return; }
+    if (targets.length === 0) {
+      onComplete();
+      return;
+    }
 
     return new Promise<void>((resolve) => {
-      if (token !== this.activeToken) { resolve(); return; }
+      if (token !== this.activeToken) {
+        resolve();
+        return;
+      }
       const tl = anime.timeline({
         easing: "easeInOutSine",
         autoplay: true,
@@ -165,10 +180,13 @@ class GridAnimatorController {
         scale: [0.8, 1.25, 1.0],
         backgroundColor: ["#f59e0b", "#fbbf24", "#fef08a"],
         boxShadow: ["0 0 0px #fbbf24", "0 0 15px #fbbf24", "0 0 6px #f59e0b"],
-        borderColor: ["#f59e0b", "#fef08a", "#fef08a"],
+        borderColor: ["#fef08a", "#fef08a", "#fef08a"],
         duration: 350,
         delay: anime.stagger(25),
         easing: "easeInOutSine",
+        update: () => {
+          if (token !== this.activeToken) tl.pause();
+        },
       });
       const fallback = window.setTimeout(() => {
         if (token === this.activeToken) {
@@ -185,6 +203,7 @@ class GridAnimatorController {
     speed: AnimationSpeed
   ): Promise<void> {
     if (carvedWalls.length === 0) return;
+    this.cancelAnimation();
     const token = ++this.activeToken;
     if (speed === "INSTANT") {
       for (const coord of carvedWalls) {
@@ -192,6 +211,7 @@ class GridAnimatorController {
         const el = this.queryNode(coord) as HTMLElement | null;
         if (!el) continue;
         el.style.backgroundColor = "#27272a";
+        el.style.backgroundImage = "";
         el.style.transform = "scale(1)";
       }
       return;
@@ -201,13 +221,15 @@ class GridAnimatorController {
     for (const coord of carvedWalls) {
       const el = this.queryNode(coord) as HTMLElement | null;
       if (!el) continue;
-      // Prepare for pop
       el.style.transform = "scale(0)";
       targets.push(el);
     }
     if (targets.length === 0) return;
     return new Promise<void>((resolve) => {
-      if (token !== this.activeToken) { resolve(); return; }
+      if (token !== this.activeToken) {
+        resolve();
+        return;
+      }
       const tl = anime.timeline({
         easing: "easeOutQuad",
         autoplay: true,
@@ -223,8 +245,13 @@ class GridAnimatorController {
         duration: 150,
         delay: anime.stagger(Math.max(1, delayMs)),
         easing: "easeOutQuad",
+        update: () => {
+          if (token !== this.activeToken) tl.pause();
+        },
       });
-      const fallback = window.setTimeout(() => resolve(), targets.length * Math.max(1, delayMs) + 300);
+      const fallback = window.setTimeout(() => {
+        if (token === this.activeToken) resolve();
+      }, targets.length * Math.max(1, delayMs) + 300);
       this.pendingTimers.push(fallback);
     });
   }

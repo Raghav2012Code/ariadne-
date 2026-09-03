@@ -6,6 +6,17 @@ import { GridCanvas } from "@/components/grid/GridCanvas";
 import { MetricsRibbon } from "@/components/metrics/MetricsRibbon";
 import { parseUrlState } from "@/lib/utils/urlState";
 
+const LEGEND = [
+  { label: "Start", cls: "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-[0_0_10px_rgba(52,211,153,.6)] border-white/60" },
+  { label: "Target", cls: "bg-gradient-to-br from-rose-400 to-rose-600 shadow-[0_0_10px_rgba(251,113,133,.6)] border-white/60" },
+  { label: "Unvisited", cls: "bg-[#0B0D12] border-white/15" },
+  { label: "Visited", cls: "bg-gradient-to-br from-indigo-950 via-indigo-700 to-violet-500 border-transparent" },
+  { label: "Frontier", cls: "bg-cyan-400/10 border-cyan-300/70 border-dashed" },
+  { label: "Path", cls: "bg-gradient-to-br from-amber-300 to-amber-500 shadow-[0_0_10px_rgba(251,191,36,.6)] border-white/70" },
+  { label: "Wall", cls: "bg-gradient-to-br from-zinc-600 to-zinc-900 border-white/10" },
+  { label: "Weight ×5", cls: "bg-[#2a1503] border-orange-500/50" },
+];
+
 export default function Page() {
   const initializeGrid = useGridStore((s) => s.initializeGrid);
   const generateMaze = useGridStore((s) => s.generateMaze);
@@ -25,17 +36,25 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="h-[100dvh] w-screen overflow-hidden flex flex-col bg-black">
+    <div className="h-[100dvh] w-screen overflow-hidden flex flex-col">
       <Toolbar />
-      <div id="legend" className="shrink-0 flex gap-2 items-center flex-wrap px-3 py-1.5 bg-zinc-950 border-b border-zinc-800 text-[11px] font-semibold text-zinc-500 overflow-x-auto">
-        <span className="inline-flex items-center gap-1.5 text-zinc-50"><i className="w-3 h-3 rounded-[3px] bg-emerald-500 shadow-[0_0_0_3px_rgba(34,197,94,0.45)] block" />Start</span>
-        <span className="inline-flex items-center gap-1.5 text-zinc-50"><i className="w-3 h-3 rounded-[3px] bg-rose-500 shadow-[0_0_0_3px_rgba(239,68,68,0.45)] block" />Target</span>
-        <span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-[3px] bg-black border border-zinc-900 block" />Unvisited</span>
-        <span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-[3px] bg-indigo-600 block" />Visited</span>
-        <span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-[3px] border border-zinc-400 block" />Frontier</span>
-        <span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-[3px] bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.65)] block" />Path</span>
-        <span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-[3px] bg-zinc-800 block" />Wall</span>
-        <span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-[3px] bg-[#451a03] border border-[#7c2d12] block" />Weight</span>
+      <div
+        id="legend"
+        className="shrink-0 z-10 flex gap-2 items-center px-4 lg:px-6 py-2 border-b border-white/[0.06] bg-black/30 backdrop-blur overflow-x-auto"
+      >
+        <span className="label-micro mr-1 shrink-0">Legend</span>
+        {LEGEND.map((it) => (
+          <span
+            key={it.label}
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-zinc-300 shrink-0 rounded-full border border-white/[0.06] bg-white/[0.02] pl-1.5 pr-2.5 py-1"
+          >
+            <i className={`w-3.5 h-3.5 rounded-[5px] border block ${it.cls}`} />
+            {it.label}
+          </span>
+        ))}
+        <span className="ml-auto hidden xl:block text-[11px] text-zinc-600 shrink-0 font-medium">
+          Weighted cells cost 5 · Walls block movement
+        </span>
       </div>
       <GridCanvas key={`${grid.length}-${grid[0]?.length ?? 0}`} />
       <MetricsRibbon />

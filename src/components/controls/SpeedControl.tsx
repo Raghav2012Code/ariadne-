@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useGridStore } from "@/store/useGridStore";
 import type { SpeedType } from "@/store/types";
+import { Zap } from "lucide-react";
 
 const order: SpeedType[] = ["instant", "fast", "normal", "slow"];
 const labels: Record<SpeedType, string> = { instant: "Instant", fast: "Fast", normal: "Normal", slow: "Slow" };
@@ -11,18 +12,20 @@ export function SpeedControl() {
   const setSpeed = useGridStore((s) => s.setSpeed);
   const idx = order.indexOf(speed);
   return (
-    <div className="flex items-center gap-1.5 bg-black border border-zinc-800 rounded-full px-2 py-1">
-      <span className="text-[9px] font-extrabold tracking-[0.1em] uppercase text-zinc-500">Speed</span>
+    <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/60 pl-3 pr-3 py-1.5">
+      <span className="inline-flex items-center gap-1 label-micro">
+        <Zap size={12} className="text-amber-300/80" /> Speed
+      </span>
       <input
         type="range"
         min={0}
         max={3}
         value={idx}
         onChange={(e) => setSpeed(order[parseInt(e.target.value, 10)])}
-        className="w-[90px] h-1 accent-white cursor-pointer"
-        aria-label="Speed"
+        className="slider-modern w-[96px]"
+        aria-label="Animation speed"
       />
-      <span className="text-xs font-bold text-white min-w-[48px]">{labels[speed]}</span>
+      <span className="text-[12px] font-semibold text-zinc-100 min-w-[52px] text-right tabular-nums">{labels[speed]}</span>
     </div>
   );
 }
