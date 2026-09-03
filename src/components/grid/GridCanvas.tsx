@@ -137,7 +137,6 @@ export function GridCanvas() {
           {
             gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
             gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
-            // @ts-ignore
             "--cell-size": `${cellSize}px`,
           } as React.CSSProperties
         }
