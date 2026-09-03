@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type {
   CellNode, Point, AlgorithmType, DifficultyType, SpeedType, EngineStatus,
 } from "./types";
-import { DensityPresets, SpeedDelays } from "./types";
+import { DensityPresets } from "./types";
 import { createGrid, getNode } from "@/lib/utils/gridHelpers";
 import { recursiveBacktracker } from "@/lib/algorithms/maze/backtracker";
 import { randomizedPrims } from "@/lib/algorithms/maze/prims";

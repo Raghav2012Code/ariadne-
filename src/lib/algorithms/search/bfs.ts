@@ -1,5 +1,5 @@
 import type { CellNode, Point } from "@/store/types";
-import { getNeighbors, nodeCost } from "@/lib/utils/gridHelpers";
+import { getNeighbors } from "@/lib/utils/gridHelpers";
 
 export async function bfs(
   grid: CellNode[][],
@@ -31,7 +31,6 @@ export async function bfs(
       nb.g = cur.g + 1;
       onFrontier(nb);
       q.push(nb);
-      void nodeCost;
     }
   }
   return null;

@@ -96,7 +96,19 @@ export function Toolbar() {
             </Select>
           </label>
 
-          <label
+          <div
+            role="switch"
+            aria-checked={isEuclidean}
+            tabIndex={busy ? -1 : 0}
+            onClick={() => {
+              if (!busy) setEuclidean(!isEuclidean);
+            }}
+            onKeyDown={(e) => {
+              if ((e.key === " " || e.key === "Enter") && !busy) {
+                e.preventDefault();
+                setEuclidean(!isEuclidean);
+              }
+            }}
             className={`flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition select-none min-h-[38px] mt-[18px] ${
               isEuclidean
                 ? "border-indigo-400/40 bg-indigo-500/10 text-indigo-200"
@@ -104,22 +116,16 @@ export function Toolbar() {
             }`}
             title="Use Euclidean distance for A* / Greedy"
           >
-            <button
-              role="switch"
-              aria-checked={isEuclidean}
-              disabled={busy}
-              onClick={(e) => {
-                e.preventDefault();
-                setEuclidean(!isEuclidean);
-              }}
-              className={`relative w-8 h-[18px] rounded-full transition-colors ${isEuclidean ? "bg-indigo-400" : "bg-zinc-700"}`}
+            <span
+              aria-hidden
+              className={`relative w-8 h-[18px] rounded-full transition-colors shrink-0 ${isEuclidean ? "bg-indigo-400" : "bg-zinc-700"}`}
             >
               <span
                 className={`absolute top-[2px] w-[14px] h-[14px] rounded-full bg-white shadow transition-all ${isEuclidean ? "left-[16px]" : "left-[2px]"}`}
               />
-            </button>
+            </span>
             <span className="text-[12px] font-semibold">Euclidean</span>
-          </label>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 ml-auto flex-wrap">

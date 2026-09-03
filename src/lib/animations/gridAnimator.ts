@@ -8,6 +8,7 @@ class GridAnimatorController {
   private activeTimeline: TimelineHandle | null = null;
   private activeToken = 0;
   private pendingTimers: number[] = [];
+  private pendingSettlers: Array<() => void> = [];
 
   private getDelay(speed: AnimationSpeed): number {
     return STEP_DELAYS[speed];
@@ -39,6 +40,15 @@ class GridAnimatorController {
     }
     for (const t of this.pendingTimers) window.clearTimeout(t);
     this.pendingTimers = [];
+    const settlers = this.pendingSettlers;
+    this.pendingSettlers = [];
+    for (const settle of settlers) {
+      try {
+        settle();
+      } catch {
+        /* settle must never throw */
+      }
+    }
   }
 
   resetCellStyles(): void {
@@ -106,11 +116,25 @@ class GridAnimatorController {
         resolve();
         return;
       }
+      let fallback = 0;
+      const dropSettler = () => {
+        this.pendingSettlers = this.pendingSettlers.filter((s) => s !== settle);
+        if (fallback) {
+          window.clearTimeout(fallback);
+          fallback = 0;
+        }
+      };
+      const settle = () => {
+        dropSettler();
+        resolve();
+      };
+      this.pendingSettlers.push(settle);
       const tl = anime.timeline({
         easing: "easeOutElastic(1, .8)",
         autoplay: true,
         complete: () => {
           if (token === this.activeToken) {
+            dropSettler();
             onComplete();
             resolve();
           }
@@ -137,8 +161,9 @@ class GridAnimatorController {
           if (token !== this.activeToken) tl.pause();
         },
       });
-      const fallback = window.setTimeout(() => {
+      fallback = window.setTimeout(() => {
         if (token === this.activeToken) {
+          dropSettler();
           onComplete();
           resolve();
         }
@@ -178,9 +203,23 @@ class GridAnimatorController {
         resolve();
         return;
       }
+      let fallback = 0;
+      const dropSettler = () => {
+        this.pendingSettlers = this.pendingSettlers.filter((s) => s !== settle);
+        if (fallback) {
+          window.clearTimeout(fallback);
+          fallback = 0;
+        }
+      };
+      const settle = () => {
+        dropSettler();
+        resolve();
+      };
+      this.pendingSettlers.push(settle);
       const done = () => {
         if (token !== this.activeToken) return;
         for (const el of targets) el.classList.add("is-path");
+        dropSettler();
         onComplete();
         resolve();
       };
@@ -222,7 +261,7 @@ class GridAnimatorController {
           if (token !== this.activeToken) tl.pause();
         },
       });
-      const fallback = window.setTimeout(() => {
+      fallback = window.setTimeout(() => {
         if (token === this.activeToken) done();
       }, targets.length * 22 + 900);
       this.pendingTimers.push(fallback);
@@ -265,11 +304,27 @@ class GridAnimatorController {
         resolve();
         return;
       }
+      let fallback = 0;
+      const dropSettler = () => {
+        this.pendingSettlers = this.pendingSettlers.filter((s) => s !== settle);
+        if (fallback) {
+          window.clearTimeout(fallback);
+          fallback = 0;
+        }
+      };
+      const settle = () => {
+        dropSettler();
+        resolve();
+      };
+      this.pendingSettlers.push(settle);
       const tl = anime.timeline({
         easing: "easeOutQuad",
         autoplay: true,
         complete: () => {
-          if (token === this.activeToken) resolve();
+          if (token === this.activeToken) {
+            dropSettler();
+            resolve();
+          }
         },
       });
       this.activeTimeline = tl;
@@ -290,8 +345,11 @@ class GridAnimatorController {
           if (token !== this.activeToken) tl.pause();
         },
       });
-      const fallback = window.setTimeout(() => {
-        if (token === this.activeToken) resolve();
+      fallback = window.setTimeout(() => {
+        if (token === this.activeToken) {
+          dropSettler();
+          resolve();
+        }
       }, targets.length * Math.max(1, delayMs) + 350);
       this.pendingTimers.push(fallback);
     });
