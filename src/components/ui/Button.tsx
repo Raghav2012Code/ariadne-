@@ -1,16 +1,18 @@
 import * as React from "react";
 
-type Variant = "primary" | "ghost" | "soft";
+type Variant = "primary" | "ghost" | "soft" | "danger";
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
 };
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "text-white border-transparent bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 hover:brightness-110 hover:shadow-glow shadow-[0_4px_20px_rgba(99,102,241,.4)] font-bold",
+    "bg-white text-zinc-950 border-white hover:bg-zinc-200 font-bold shadow-[0_2px_10px_rgba(0,0,0,.4)]",
   ghost:
     "bg-white/[0.04] text-zinc-100 border-white/10 hover:bg-white/[0.08] hover:border-white/20",
   soft: "bg-white/[0.06] text-zinc-200 border-white/10 hover:bg-white/[0.1]",
+  danger:
+    "bg-rose-500 text-white border-rose-500 hover:bg-rose-400 font-bold shadow-[0_2px_10px_rgba(0,0,0,.4)]",
 };
 
 export function Button({ variant = "ghost", className = "", children, ...props }: Props) {

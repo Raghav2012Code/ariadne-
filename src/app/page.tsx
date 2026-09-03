@@ -7,14 +7,14 @@ import { MetricsRibbon } from "@/components/metrics/MetricsRibbon";
 import { parseUrlState } from "@/lib/utils/urlState";
 
 const LEGEND = [
-  { label: "Start", cls: "bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-[0_0_10px_rgba(52,211,153,.6)] border-white/60" },
-  { label: "Target", cls: "bg-gradient-to-br from-rose-400 to-rose-600 shadow-[0_0_10px_rgba(251,113,133,.6)] border-white/60" },
-  { label: "Unvisited", cls: "bg-[#0B0D12] border-white/15" },
-  { label: "Visited", cls: "bg-gradient-to-br from-indigo-950 via-indigo-700 to-violet-500 border-transparent" },
+  { label: "Start", cls: "bg-emerald-500 border-white/60" },
+  { label: "Target", cls: "bg-rose-500 border-white/60" },
+  { label: "Unvisited", cls: "bg-[#0b0d12] border-white/15" },
+  { label: "Visited", cls: "bg-[#4338ca] border-transparent" },
   { label: "Frontier", cls: "bg-cyan-400/10 border-cyan-300/70 border-dashed" },
-  { label: "Path", cls: "bg-gradient-to-br from-amber-300 to-amber-500 shadow-[0_0_10px_rgba(251,191,36,.6)] border-white/70" },
-  { label: "Wall", cls: "bg-gradient-to-br from-zinc-600 to-zinc-900 border-white/10" },
-  { label: "Weight ×5", cls: "bg-[#2a1503] border-orange-500/50" },
+  { label: "Path", cls: "bg-amber-400 border-white/70" },
+  { label: "Wall", cls: "bg-[#262b34] border-white/10" },
+  { label: "Weight ×5", cls: "bg-[#3a2208] border-orange-500/50" },
 ];
 
 export default function Page() {

@@ -59,7 +59,7 @@ export function Toolbar() {
       {/* Top row — brand + primary actions */}
       <div className="flex items-center gap-3 px-4 lg:px-6 py-3 flex-wrap">
         <div className="flex items-center gap-3 mr-1">
-          <div className="relative grid place-items-center w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400 shadow-[0_4px_20px_rgba(99,102,241,.45)]">
+          <div className="relative grid place-items-center w-9 h-9 rounded-xl bg-indigo-500 shadow-[0_2px_10px_rgba(99,102,241,.4)]">
             <Route size={18} className="text-white" strokeWidth={2.4} />
           </div>
           <div className="leading-none">
@@ -124,9 +124,9 @@ export function Toolbar() {
 
         <div className="flex items-center gap-2 ml-auto flex-wrap">
           <Button
-            variant="primary"
+            variant={isSearching ? "danger" : "primary"}
             onClick={() => (isSearching ? abort() : runSearch())}
-            className={`min-w-[132px] ${isSearching ? "from-rose-500 to-orange-400" : ""}`}
+            className="min-w-[132px]"
           >
             {isSearching ? (
               <>
