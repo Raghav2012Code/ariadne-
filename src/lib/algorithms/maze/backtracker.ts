@@ -49,7 +49,10 @@ export async function recursiveBacktracker(
   for (const p of [start, target]) {
     for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
       const n = grid[p.r + dr]?.[p.c + dc];
-      if (n && n.type === "wall" && Math.random() < 0.92) n.type = "empty";
+      if (!n) continue;
+      // Never punch through the sealed outer border.
+      if (n.r === 0 || n.c === 0 || n.r === rows - 1 || n.c === cols - 1) continue;
+      if (n.type === "wall" && Math.random() < 0.92) n.type = "empty";
     }
   }
 }
