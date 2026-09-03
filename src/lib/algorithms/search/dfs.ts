@@ -12,14 +12,13 @@ export async function dfs(
 ): Promise<CellNode | null> {
   const s = grid[start.r][start.c];
   const stack: CellNode[] = [s];
-  const seen = new Set<string>();
+  // Mark seen on push (not pop): every cell is queued at most once, so the
+  // stack stays linear instead of accumulating duplicate entries on open grids.
+  const seen = new Set<string>([`${s.r},${s.c}`]);
   s.parent = null;
   while (stack.length > 0) {
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     const cur = stack.pop() as CellNode;
-    const k = `${cur.r},${cur.c}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
     if (!(cur.r === start.r && cur.c === start.c)) onVisit(cur);
     if (cur.r === target.r && cur.c === target.c) return cur;
     if (delay > 0) await new Promise<void>((r) => setTimeout(r, delay));
@@ -28,7 +27,8 @@ export async function dfs(
       const nb = neigh[i];
       const kk = `${nb.r},${nb.c}`;
       if (seen.has(kk)) continue;
-      if (!nb.parent) nb.parent = { r: cur.r, c: cur.c };
+      seen.add(kk);
+      nb.parent = { r: cur.r, c: cur.c };
       onFrontier(nb);
       stack.push(nb);
     }
