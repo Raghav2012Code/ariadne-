@@ -85,9 +85,18 @@ export async function bidirectionalAStar(
   const closedF = new Set<string>(), closedB = new Set<string>();
   let best: CellNode | null = null;
   let bestCost = Infinity;
+  // Every s-t path P satisfies cost(P) >= min-f of the forward open list AND
+  // cost(P) >= min-f of the backward open list (admissible heuristics), so
+  // cost(P) >= max(minF_F, minF_B). Once the best meeting found is no worse
+  // than that bound, no undiscovered path can beat it: it is optimal.
   const update = (n: CellNode) => {
-    const c = (n.g === Infinity ? 1e9 : n.g) + (n.gB === Infinity ? 1e9 : n.gB);
+    if (n.g === Infinity || n.gB === Infinity) return;
+    const c = n.g + n.gB;
     if (c < bestCost) { bestCost = c; best = n; }
+  };
+  const minF = (pq: MinHeap<CellNode>, key: "f" | "fB"): number => {
+    const top = pq.peek();
+    return top ? top[key] : Infinity;
   };
   while (!pqF.isEmpty() && !pqB.isEmpty()) {
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
@@ -123,8 +132,10 @@ export async function bidirectionalAStar(
         for (const nb of getNeighbors(grid, cur)) {
           const kk = `${nb.r},${nb.c}`;
           if (closedB.has(kk)) continue;
-          const tentative = (cur.gB === Infinity ? 0 : cur.gB) + nodeCost(nb);
-          if (tentative < (nb.gB === Infinity ? 1e9 : nb.gB)) {
+          // cur came from pqB so cur.gB is finite; an infinite tentative can
+          // never improve nb.gB and is safely ignored.
+          const tentative = cur.gB + nodeCost(nb);
+          if (tentative < nb.gB) {
             nb.parentB = { r: cur.r, c: cur.c };
             nb.gB = tentative; nb.hB = heuristic({ r: nb.r, c: nb.c }, start, euclidean); nb.fB = nb.gB + nb.hB;
             onFrontier(nb); pqB.push(nb);
@@ -133,11 +144,18 @@ export async function bidirectionalAStar(
         }
       }
     }
-    if (best) break;
+    if (best && Math.max(minF(pqF, "f"), minF(pqB, "fB")) >= bestCost) break;
   }
   if (best) return best;
+  // No meeting recorded: return the lowest-cost doubly-reached node, if any.
+  let fallback: CellNode | null = null;
+  let fallbackCost = Infinity;
   for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
-    const n = grid[r][c]; if (n.g !== Infinity && n.gB !== Infinity) return n;
+    const n = grid[r][c];
+    if (n.g !== Infinity && n.gB !== Infinity && n.g + n.gB < fallbackCost) {
+      fallbackCost = n.g + n.gB;
+      fallback = n;
+    }
   }
-  return null;
+  return fallback;
 }

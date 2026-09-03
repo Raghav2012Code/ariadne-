@@ -4,6 +4,7 @@ export class MinHeap<T> {
 
   size(): number { return this.heap.length; }
   isEmpty(): boolean { return this.heap.length === 0; }
+  peek(): T | undefined { return this.heap[0]; }
 
   push(value: T): void {
     this.heap.push(value);
