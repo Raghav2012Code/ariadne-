@@ -8,16 +8,13 @@ function baseClasses(n: CellNode): string {
   let cls =
     "node-cell w-[var(--cell-size)] h-[var(--cell-size)] grid place-items-center border touch-none select-none";
   if (n.type === "wall")
-    cls +=
-      " is-wall-anim bg-[#262b34] border-black/40 shadow-[inset_0_1px_0_rgba(255,255,255,.07)]";
+    cls += " is-wall-anim bg-[#262b34] border-black/40";
   else if (n.type === "weight")
     cls += " bg-[#3a2208] border-[#7c2d12]/70";
   else if (n.type === "start")
-    cls +=
-      " is-start bg-emerald-500 border-white shadow-[0_0_0_1.5px_rgba(255,255,255,.9),0_0_10px_rgba(16,185,129,.5)] z-[2]";
+    cls += " is-start bg-emerald-500 border-white z-[2]";
   else if (n.type === "target")
-    cls +=
-      " is-target bg-rose-500 border-white shadow-[0_0_0_1.5px_rgba(255,255,255,.9),0_0_10px_rgba(244,63,94,.5)] z-[2]";
+    cls += " is-target bg-rose-500 border-white z-[2]";
   else cls += " bg-[#0b0d12] border-white/[0.05]";
   return cls;
 }
@@ -36,12 +33,12 @@ export const GridCell = React.memo(
       >
         {isAnchor ? <span className="ariadne-beacon" aria-hidden /> : null}
         {node.type === "start" ? (
-          <span className="font-black text-white leading-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,.6)] relative z-[1]" style={{ fontSize: "max(7px, calc(var(--cell-size) * 0.52))" }}>
+          <span className="font-bold text-white leading-none select-none relative z-[1]" style={{ fontSize: "max(7px, calc(var(--cell-size) * 0.52))" }}>
             S
           </span>
         ) : null}
         {node.type === "target" ? (
-          <span className="font-black text-white leading-none select-none drop-shadow-[0_1px_2px_rgba(0,0,0,.6)] relative z-[1]" style={{ fontSize: "max(7px, calc(var(--cell-size) * 0.52))" }}>
+          <span className="font-bold text-white leading-none select-none relative z-[1]" style={{ fontSize: "max(7px, calc(var(--cell-size) * 0.52))" }}>
             T
           </span>
         ) : null}

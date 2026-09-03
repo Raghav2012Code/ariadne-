@@ -132,7 +132,7 @@ export function GridCanvas() {
       <div
         role="grid"
         aria-label="Maze grid"
-        className="grid-enter relative grid gap-[1.5px] rounded-xl border border-white/[0.08] bg-[#0c0e13] p-2 shrink-0 select-none touch-none shadow-[0_12px_40px_rgba(0,0,0,.5)]"
+        className="grid-enter relative grid gap-[1.5px] rounded-lg border border-white/[0.08] bg-[#0c0e13] p-2 shrink-0 select-none touch-none"
         style={
           {
             gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,

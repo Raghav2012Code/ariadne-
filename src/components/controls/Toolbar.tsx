@@ -55,16 +55,16 @@ export function Toolbar() {
   }, []);
 
   return (
-    <header id="nav" className="shrink-0 z-30 border-b border-white/[0.07] bg-[#0A0C10]/90 backdrop-blur-xl">
+    <header id="nav" className="shrink-0 z-30 border-b border-white/[0.07] bg-[#0A0C10]">
       {/* Top row — brand + primary actions */}
       <div className="flex items-center gap-3 px-4 lg:px-6 py-3 flex-wrap">
         <div className="flex items-center gap-3 mr-1">
-          <div className="relative grid place-items-center w-9 h-9 rounded-xl bg-indigo-500 shadow-[0_2px_10px_rgba(99,102,241,.4)]">
+          <div className="relative grid place-items-center w-9 h-9 rounded-md bg-indigo-500">
             <Route size={18} className="text-white" strokeWidth={2.4} />
           </div>
           <div className="leading-none">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold tracking-[0.18em] text-[14px]">ARIADNE</span>
+              <span className="font-bold tracking-[0.12em] text-[14px]">ARIADNE</span>
               <span className="hidden sm:inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-400/10 text-emerald-300 border border-emerald-400/20 tracking-wide">
                 MAZE LAB
               </span>
@@ -109,7 +109,7 @@ export function Toolbar() {
                 setEuclidean(!isEuclidean);
               }
             }}
-            className={`flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer transition select-none min-h-[38px] mt-[18px] ${
+            className={`flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer transition select-none min-h-[38px] mt-[18px] ${
               isEuclidean
                 ? "border-indigo-400/40 bg-indigo-500/10 text-indigo-200"
                 : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200"
@@ -158,7 +158,7 @@ export function Toolbar() {
               <Eraser size={14} className="text-zinc-400" /> Clear <ChevronDown size={13} className={`transition-transform ${clearOpen ? "rotate-180" : ""}`} />
             </Button>
             {clearOpen ? (
-              <div className="absolute right-0 top-[calc(100%+8px)] rounded-2xl border border-white/10 bg-[#101319] p-1.5 min-w-[180px] z-50 shadow-panel animate-fadeSlideIn">
+              <div className="absolute right-0 top-[calc(100%+8px)] rounded-lg border border-white/10 bg-[#101319] p-1.5 min-w-[180px] z-50">
                 {[
                   { label: "Clear path", desc: "Keep walls", fn: clearPath },
                   { label: "Clear walls", desc: "Keep anchors", fn: clearWalls },
@@ -166,7 +166,7 @@ export function Toolbar() {
                 ].map((it) => (
                   <button
                     key={it.label}
-                    className="w-full text-left px-3 py-2 rounded-xl text-[13px] font-semibold hover:bg-white/[0.06] transition group"
+                    className="w-full text-left px-3 py-2 rounded-md text-[13px] font-semibold hover:bg-white/[0.06] transition group"
                     onClick={() => {
                       it.fn();
                       setClearOpen(false);

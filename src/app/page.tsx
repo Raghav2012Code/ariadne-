@@ -41,13 +41,13 @@ export default function Page() {
       <Toolbar />
       <div
         id="legend"
-        className="shrink-0 z-10 flex gap-2 items-center px-4 lg:px-6 py-2 border-b border-white/[0.06] bg-black/30 backdrop-blur overflow-x-auto"
+        className="shrink-0 z-10 flex gap-2 items-center px-4 lg:px-6 py-2 border-b border-white/[0.06] bg-black/30 overflow-x-auto"
       >
         <span className="label-micro mr-1 shrink-0">Legend</span>
         {LEGEND.map((it) => (
           <span
             key={it.label}
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-zinc-300 shrink-0 rounded-full border border-white/[0.06] bg-white/[0.02] pl-1.5 pr-2.5 py-1"
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-zinc-300 shrink-0 rounded-md border border-white/[0.06] bg-white/[0.02] pl-1.5 pr-2.5 py-1"
           >
             <i className={`w-3.5 h-3.5 rounded-[5px] border block ${it.cls}`} />
             {it.label}

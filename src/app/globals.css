@@ -20,27 +20,17 @@ body {
 *::-webkit-scrollbar-track { background: transparent; }
 
 @layer components {
-  .glass {
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.08);
-    backdrop-filter: blur(14px);
-  }
-  .panel-soft {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.07);
-  }
   .label-micro {
-    @apply text-[10px] font-bold tracking-[0.14em] uppercase text-zinc-500;
+    @apply text-[10px] font-bold tracking-[0.1em] uppercase text-zinc-500;
   }
   .seg-shell {
-    @apply flex items-center gap-0.5 rounded-full border border-white/10 bg-black/60 p-1;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    @apply flex items-center gap-0.5 rounded-md border border-white/10 bg-black/60 p-1;
   }
   .seg-btn {
-    @apply rounded-full px-3 py-1.5 text-[12px] font-semibold text-zinc-400 transition-all duration-150 min-h-[30px] hover:text-zinc-100 hover:bg-white/5 disabled:opacity-40 disabled:pointer-events-none;
+    @apply rounded-md px-3 py-1.5 text-[12px] font-semibold text-zinc-400 transition-colors duration-150 min-h-[30px] hover:text-zinc-100 hover:bg-white/5 disabled:opacity-40 disabled:pointer-events-none;
   }
   .seg-btn-active {
-    @apply text-zinc-950 bg-white shadow-[0_2px_12px_rgba(255,255,255,.25)] hover:bg-white hover:text-zinc-950;
+    @apply text-zinc-950 bg-white hover:bg-white hover:text-zinc-950;
   }
 }
 
@@ -60,7 +50,6 @@ input[type="range"].slider-modern::-webkit-slider-thumb {
   border-radius: 50%;
   background: #fff;
   border: 2px solid #0a0c10;
-  box-shadow: 0 0 0 3px rgba(255,255,255,.18), 0 2px 8px rgba(0,0,0,.5);
 }
 input[type="range"].slider-modern::-moz-range-thumb {
   width: 12px; height: 12px;
@@ -77,41 +66,34 @@ input[type="range"].slider-modern::-moz-range-thumb {
   position: relative;
 }
 .node-cell:hover {
-  border-color: rgba(129, 140, 248, .55);
-  box-shadow: 0 0 10px rgba(99, 102, 241, .35);
+  border-color: rgba(255, 255, 255, .35);
   z-index: 1;
 }
-.is-start:hover, .is-target:hover { box-shadow: 0 0 18px rgba(255,255,255,.5); }
 
 /* Persistent post-animation states (anime hands off to CSS) */
 .is-visited {
   background: #4338ca;
   border-color: rgba(255, 255, 255, .07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
 }
 .is-path {
   background: #fbbf24;
   border-color: rgba(255, 255, 255, .8);
-  box-shadow: 0 0 0 1px rgba(255,255,255,.7), 0 0 10px rgba(251,191,36,.5);
-  animation: pathBreathe 1.2s ease-in-out infinite alternate;
   z-index: 1;
 }
 .is-wall-anim {
   background: #262b34;
 }
 
-/* Anchor beacon pulse rings */
+/* Anchor ring (static; no pulsing) */
 .ariadne-beacon {
   position: absolute;
   inset: -3px;
   border-radius: 7px;
-  border: 1.5px solid rgba(255, 255, 255, .7);
-  opacity: 0;
+  border: 1.5px solid rgba(255, 255, 255, .35);
   pointer-events: none;
-  animation: beaconPing 1.8s cubic-bezier(0, 0, .2, 1) infinite;
 }
-.is-start .ariadne-beacon { border-color: rgba(110, 231, 183, .9); }
-.is-target .ariadne-beacon { border-color: rgba(253, 164, 175, .9); }
+.is-start .ariadne-beacon { border-color: rgba(110, 231, 183, .6); }
+.is-target .ariadne-beacon { border-color: rgba(253, 164, 175, .6); }
 
 /* Grid entrance */
 @keyframes gridEnter {
@@ -120,35 +102,5 @@ input[type="range"].slider-modern::-moz-range-thumb {
 }
 .grid-enter { animation: gridEnter .45s cubic-bezier(.22, 1, .36, 1) both; }
 
-@keyframes weightSpin {
-  0% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.25); filter: brightness(1.35); }
-  100% { transform: scale(1); filter: brightness(1); }
-}
-.animate-weight-spin { animation: weightSpin 2.2s ease-in-out infinite; }
-
 /* Select reset */
 select option { background: #0e1117; color: #f4f4f5; }
-
-@keyframes visitedRipple {
-  0% { transform: scale(0.42); border-radius: 50%; background: #1e1b4b; }
-  60% { transform: scale(1.05); }
-  100% { transform: scale(1); border-radius: 3px; background: #4338ca; }
-}
-@keyframes pathNeon {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.05); box-shadow: 0 0 0 1px #fff, 0 0 18px rgba(251,191,36,0.7); }
-}
-@keyframes pathBreathe {
-  0% { transform: scale(1); box-shadow: 0 0 0 1px rgba(255,255,255,.75), 0 0 8px rgba(251,191,36,.55); }
-  100% { transform: scale(1.06); box-shadow: 0 0 0 1px #fff, 0 0 18px rgba(251,191,36,.85); }
-}
-@keyframes beaconPing {
-  0% { transform: scale(.8); opacity: .9; }
-  70% { transform: scale(1.35); opacity: 0; }
-  100% { transform: scale(1.35); opacity: 0; }
-}
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}

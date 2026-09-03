@@ -12,7 +12,7 @@ export function SpeedControl() {
   const setSpeed = useGridStore((s) => s.setSpeed);
   const idx = order.indexOf(speed);
   return (
-    <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-black/60 pl-3 pr-3 py-1.5">
+    <div className="flex items-center gap-2.5 rounded-md border border-white/10 bg-black/60 pl-3 pr-3 py-1.5">
       <span className="inline-flex items-center gap-1 label-micro">
         <Zap size={12} className="text-amber-300/80" /> Speed
       </span>
