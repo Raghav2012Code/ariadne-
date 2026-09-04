@@ -34,7 +34,6 @@ type StoreState = {
   executionTimeMs: number;
   abortController: AbortController | null;
   densityKey: string;
-  activeAnimationToken: number;
   gridVersion: number;
 };
 
@@ -87,7 +86,6 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   executionTimeMs: 0,
   abortController: null,
   densityKey: "balanced",
-  activeAnimationToken: 0,
   gridVersion: 0,
 
   initializeGrid: (rows, cols) => {
@@ -101,7 +99,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     grid[start.r][start.c].type = "start";
     grid[target.r][target.c].type = "target";
     GridAnimator.resetCellStyles();
-    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, activeAnimationToken: get().activeAnimationToken + 1 });
+    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0 });
   },
 
   hydrateFromUrl: (algo, diff, speed) => {
@@ -142,7 +140,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     GridAnimator.resetCellStyles();
     const { abortController } = get();
     if (abortController) abortController.abort();
-    set((s) => ({ activeAnimationToken: s.activeAnimationToken + 1, abortController: null, status: "IDLE" }));
+    set({ abortController: null, status: "IDLE" });
   },
 
   abort: () => {
@@ -159,7 +157,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       }
     }
     GridAnimator.resetCellStyles();
-    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
+    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
   },
 
   clearWalls: () => {
@@ -180,7 +178,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     newGrid[startNode.r][startNode.c] = { ...newGrid[startNode.r][startNode.c], type: "start" as CellNode["type"] };
     newGrid[targetNode.r][targetNode.c] = { ...newGrid[targetNode.r][targetNode.c], type: "target" as CellNode["type"] };
     GridAnimator.resetCellStyles();
-    set({ grid: newGrid, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
+    set({ grid: newGrid, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
   },
 
   fullReset: () => {
@@ -195,7 +193,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     grid[start.r][start.c].type = "start";
     grid[target.r][target.c].type = "target";
     GridAnimator.resetCellStyles();
-    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
+    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
   },
 
   moveNode: (type, to) => {
@@ -279,7 +277,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       // Animate only the newly-added walls.
       await GridAnimator.animateMazeGeneration(addedWalls, animSpeed);
       if (controller.signal.aborted) return;
-      set({ status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
+      set({ status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
     } catch (e) {
       if ((e as DOMException).name === "AbortError") return;
       set({ status: "IDLE", abortController: null });
@@ -299,7 +297,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     }
     GridAnimator.resetCellStyles();
     const controller = new AbortController();
-    set({ abortController: controller, status: "SEARCHING", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, activeAnimationToken: get().activeAnimationToken + 1 });
+    set({ abortController: controller, status: "SEARCHING", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0 });
     const animSpeed = speedToAnimation(st.speed);
     const t0 = performance.now();
     const visitedOrder: Coordinate[] = [];
@@ -388,7 +386,6 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
         pathLength: path.length - 1,
         executionTimeMs: t1 - t0,
         abortController: null,
-        activeAnimationToken: get().activeAnimationToken + 1,
       });
     } catch (e) {
       if ((e as DOMException).name === "AbortError") {
