@@ -41,9 +41,10 @@ export function Toolbar() {
   const isEuclidean = useGridStore((s) => s.isEuclidean);
   const setEuclidean = useGridStore((s) => s.setEuclidean);
   const [clearOpen, setClearOpen] = React.useState(false);
-  const isSearching = status === "SEARCHING";
   const isGenerating = status === "GENERATING";
-  const busy = isSearching || isGenerating;
+  // While searching OR generating, the primary button aborts instead of
+  // starting a new run — a search must never start on a half-carved maze.
+  const busy = isGenerating || status === "SEARCHING";
   const clearRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -130,11 +131,11 @@ export function Toolbar() {
 
         <div className="flex items-center gap-2 ml-auto flex-wrap">
           <Button
-            variant={isSearching ? "danger" : "primary"}
-            onClick={() => (isSearching ? abort() : runSearch())}
+            variant={busy ? "danger" : "primary"}
+            onClick={() => (busy ? abort() : runSearch())}
             className="min-w-[132px]"
           >
-            {isSearching ? (
+            {busy ? (
               <>
                 <Square size={14} fill="currentColor" /> Abort
               </>
