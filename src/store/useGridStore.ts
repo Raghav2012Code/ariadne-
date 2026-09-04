@@ -165,13 +165,22 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   clearWalls: () => {
     get().cancelAnimation();
     const { grid, startNode, targetNode } = get();
-    for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
-      const n = grid[r][c]; n.type = "empty"; n.state = "unvisited"; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null; n.gB = Infinity;
-    }
-    grid[startNode.r][startNode.c].type = "start";
-    grid[targetNode.r][targetNode.c].type = "target";
+    // Immutable cell updates (see moveNode): memoized GridCells compare by
+    // type, so mutating nodes in place would leave stale wall visuals.
+    const newGrid = grid.map((row) =>
+      row.map((n) => ({
+        ...n,
+        type: "empty" as CellNode["type"],
+        state: "unvisited" as CellNode["state"],
+        g: Infinity, h: 0, f: Infinity,
+        parent: null, parentB: null,
+        gB: Infinity, hB: 0, fB: Infinity,
+      }))
+    );
+    newGrid[startNode.r][startNode.c] = { ...newGrid[startNode.r][startNode.c], type: "start" as CellNode["type"] };
+    newGrid[targetNode.r][targetNode.c] = { ...newGrid[targetNode.r][targetNode.c], type: "target" as CellNode["type"] };
     GridAnimator.resetCellStyles();
-    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
+    set({ grid: newGrid, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null, activeAnimationToken: get().activeAnimationToken + 1 });
   },
 
   fullReset: () => {

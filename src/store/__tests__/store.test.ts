@@ -65,4 +65,28 @@ describe("grid store guards", () => {
     expect(st.grid[5][5].type).toBe("start");
     expect(() => st.setWall({ r: -1, c: -1 }, true)).not.toThrow();
   });
+
+  it("clearWalls replaces every cell object so memoized GridCells re-render", async () => {
+    stubDom();
+    const { useGridStore } = await import("@/store/useGridStore");
+    const api = useGridStore.getState();
+    api.initializeGrid(15, 15);
+    let st = useGridStore.getState();
+    st.setWall({ r: 3, c: 3 }, true);
+    st.setWall({ r: 4, c: 4 }, true);
+    st = useGridStore.getState();
+    const before = st.grid.map((row) => [...row]);
+    st.clearWalls();
+    st = useGridStore.getState();
+    expect(st.grid[3][3].type).toBe("empty");
+    expect(st.grid[4][4].type).toBe("empty");
+    expect(st.grid[st.startNode.r][st.startNode.c].type).toBe("start");
+    expect(st.grid[st.targetNode.r][st.targetNode.c].type).toBe("target");
+    // GridCell memo compares type on props: same object refs would render stale walls.
+    for (let r = 0; r < st.grid.length; r++) {
+      for (let c = 0; c < st.grid[0].length; c++) {
+        expect(st.grid[r][c]).not.toBe(before[r][c]);
+      }
+    }
+  });
 });
