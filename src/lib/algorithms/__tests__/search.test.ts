@@ -209,7 +209,7 @@ describe("search algorithms", () => {
     }
   );
 
-  it.each([1, 2, 3])(
+  it.each([1, 2, 3, 4, 5, 6])(
     "bidirectional A* is optimal vs dijkstra (weighted seed %i)",
     async (seed) => {
       const a = makeWeighted(21, 21, seed);

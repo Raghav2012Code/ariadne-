@@ -106,7 +106,7 @@ export async function bidirectionalAStar(
       if (!closedF.has(k)) {
         closedF.add(k);
         if (!(cur.r === start.r && cur.c === start.c)) onVisit(cur);
-        if (closedB.has(k)) { update(cur); break; }
+        if (closedB.has(k)) update(cur);
         if (delay > 0) await new Promise<void>((r) => setTimeout(r, delay));
         for (const nb of getNeighbors(grid, cur)) {
           const kk = `${nb.r},${nb.c}`;
@@ -127,7 +127,7 @@ export async function bidirectionalAStar(
       if (!closedB.has(k)) {
         closedB.add(k);
         if (!(cur.r === target.r && cur.c === target.c)) onVisit(cur);
-        if (closedF.has(k)) { update(cur); break; }
+        if (closedF.has(k)) update(cur);
         if (delay > 0) await new Promise<void>((r) => setTimeout(r, delay));
         for (const nb of getNeighbors(grid, cur)) {
           const kk = `${nb.r},${nb.c}`;
