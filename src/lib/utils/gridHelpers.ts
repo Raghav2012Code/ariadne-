@@ -50,6 +50,18 @@ export function isSame(a: Point, b: Point): boolean {
   return a.r === b.r && a.c === b.c;
 }
 
+// Reset every search-traversal field so algorithms stay correct on grid
+// reuse: stale parents or g-scores from a previous run must not leak in.
+// Deliberately leaves type/state alone (maze layout and visuals are the caller's job).
+export function resetSearchState(grid: CellNode[][]): void {
+  for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
+    const n = grid[r][c];
+    n.g = Infinity; n.h = 0; n.f = Infinity;
+    n.parent = null; n.parentB = null;
+    n.gB = Infinity; n.hB = 0; n.fB = Infinity;
+  }
+}
+
 export function calculateCellSize(
   availW: number,
   availH: number,

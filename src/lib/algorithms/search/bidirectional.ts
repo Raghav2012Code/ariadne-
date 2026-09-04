@@ -1,5 +1,5 @@
 import type { CellNode, Point } from "@/store/types";
-import { getNeighbors, heuristic, nodeCost } from "@/lib/utils/gridHelpers";
+import { getNeighbors, heuristic, nodeCost, resetSearchState } from "@/lib/utils/gridHelpers";
 import { MinHeap } from "@/lib/algorithms/data-structures/MinHeap";
 
 export async function bidirectionalBFS(
@@ -11,9 +11,7 @@ export async function bidirectionalBFS(
   onVisit: (n: CellNode) => void,
   onFrontier: (n: CellNode) => void
 ): Promise<CellNode | null> {
-  for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
-    const n = grid[r][c]; n.parent = null; n.parentB = null;
-  }
+  resetSearchState(grid);
   const s = grid[start.r][start.c], t = grid[target.r][target.c];
   const qF: CellNode[] = [s], qB: CellNode[] = [t];
   const seenF = new Set<string>([`${s.r},${s.c}`]), seenB = new Set<string>([`${t.r},${t.c}`]);
@@ -73,9 +71,7 @@ export async function bidirectionalAStar(
   onFrontier: (n: CellNode) => void,
   euclidean = false
 ): Promise<CellNode | null> {
-  for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
-    const n = grid[r][c]; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null; n.gB = Infinity; n.hB = 0; n.fB = Infinity;
-  }
+  resetSearchState(grid);
   const s = grid[start.r][start.c], t = grid[target.r][target.c];
   s.g = 0; s.h = heuristic(start, target, euclidean); s.f = s.h;
   t.gB = 0; t.hB = heuristic(target, start, euclidean); t.fB = t.hB;

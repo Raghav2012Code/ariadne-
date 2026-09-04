@@ -1,5 +1,5 @@
 import type { CellNode, Point } from "@/store/types";
-import { getNeighbors, heuristic } from "@/lib/utils/gridHelpers";
+import { getNeighbors, heuristic, resetSearchState } from "@/lib/utils/gridHelpers";
 import { MinHeap } from "@/lib/algorithms/data-structures/MinHeap";
 
 export async function greedy(
@@ -12,9 +12,7 @@ export async function greedy(
   onFrontier: (n: CellNode) => void,
   euclidean = false
 ): Promise<CellNode | null> {
-  for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
-    const n = grid[r][c]; n.f = Infinity; n.parent = null;
-  }
+  resetSearchState(grid);
   const s = grid[start.r][start.c];
   s.h = heuristic(start, target, euclidean); s.f = s.h;
   const pq = new MinHeap<CellNode>((a, b) => a.f - b.f);

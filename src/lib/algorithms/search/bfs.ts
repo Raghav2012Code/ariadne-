@@ -1,5 +1,5 @@
 import type { CellNode, Point } from "@/store/types";
-import { getNeighbors } from "@/lib/utils/gridHelpers";
+import { getNeighbors, resetSearchState } from "@/lib/utils/gridHelpers";
 
 export async function bfs(
   grid: CellNode[][],
@@ -12,9 +12,7 @@ export async function bfs(
 ): Promise<CellNode | null> {
   // Reset search state so the algorithm is correct on grid reuse (stale
   // parents/g-scores from a previous run must not leak into this one).
-  for (let r = 0; r < grid.length; r++) for (let c = 0; c < grid[0].length; c++) {
-    const n = grid[r][c]; n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null; n.parentB = null;
-  }
+  resetSearchState(grid);
   const s = grid[start.r][start.c];
   const q: CellNode[] = [s];
   const seen = new Set<string>([`${s.r},${s.c}`]);
