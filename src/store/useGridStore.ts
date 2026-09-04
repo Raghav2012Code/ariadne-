@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 import type {
-  CellNode, Point, AlgorithmType, DifficultyType, SpeedType, EngineStatus,
+  CellNode, Point, AlgorithmType, DifficultyType, SpeedType, EngineStatus, BrushType,
 } from "./types";
 import { DensityPresets } from "./types";
 import { createGrid, getNode } from "@/lib/utils/gridHelpers";
@@ -35,6 +35,7 @@ type StoreState = {
   abortController: AbortController | null;
   densityKey: string;
   gridVersion: number;
+  brush: BrushType;
 };
 
 type StoreActions = {
@@ -53,6 +54,8 @@ type StoreActions = {
   fullReset: () => void;
   moveNode: (type: "start" | "target", to: Point) => void;
   setWall: (p: Point, isWall: boolean) => void;
+  setCellType: (p: Point, t: "wall" | "weight" | "empty") => void;
+  setBrush: (b: BrushType) => void;
   hydrateFromUrl: (algo?: AlgorithmType, diff?: DifficultyType, speed?: SpeedType) => void;
 };
 
@@ -87,6 +90,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   abortController: null,
   densityKey: "balanced",
   gridVersion: 0,
+  brush: "wall",
 
   initializeGrid: (rows, cols) => {
     const st = get();
@@ -221,15 +225,22 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   },
 
   setWall: (p, isWall) => {
+    get().setCellType(p, isWall ? "wall" : "empty");
+  },
+
+  setCellType: (p, t) => {
     const { grid, startNode, targetNode } = get();
     if ((p.r === startNode.r && p.c === startNode.c) || (p.r === targetNode.r && p.c === targetNode.c)) return;
     const n = getNode(grid, p);
     if (!n) return;
+    if (n.type === t) return;
     // Immutable update (see moveNode): clone the cell so memo re-renders.
     const newGrid = grid.map((row) => [...row]);
-    newGrid[p.r][p.c] = { ...n, type: isWall ? "wall" : "empty", state: "unvisited" };
+    newGrid[p.r][p.c] = { ...n, type: t, state: "unvisited" };
     set({ grid: newGrid });
   },
+
+  setBrush: (b) => set({ brush: b }),
 
   generateMaze: async () => {
     const st = get();

@@ -6,9 +6,11 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { DifficultyPicker } from "./DifficultyPicker";
 import { SpeedControl } from "./SpeedControl";
-import type { AlgorithmType } from "@/store/types";
+import type { AlgorithmType, BrushType } from "@/store/types";
 import {
+  Brush,
   ChevronDown,
+  CircleDot,
   Play,
   Square,
   Shuffle,
@@ -202,11 +204,47 @@ export function Toolbar() {
           <DensityControl />
         </div>
         <SpeedControl />
+        <div className="flex items-center gap-2">
+          <span className="label-micro hidden sm:inline-flex items-center gap-1">
+            <Brush size={12} className="text-zinc-500" /> Brush
+          </span>
+          <BrushControl />
+        </div>
         <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] text-zinc-500 ml-auto font-medium">
-          <MousePointer2 size={12} /> Drag <b className="text-emerald-300">S</b>/<b className="text-rose-300">T</b> anchors · Left-draw walls · Right/Shift erases · Space to run
+          <MousePointer2 size={12} /> Drag <b className="text-emerald-300">S</b>/<b className="text-rose-300">T</b> anchors · Left-draw · Right/Shift erases · Space to run
         </span>
       </div>
     </header>
+  );
+}
+
+function BrushControl() {
+  const brush = useGridStore((s) => s.brush);
+  const setBrush = useGridStore((s) => s.setBrush);
+  const status = useGridStore((s) => s.status);
+  const disabled = status === "SEARCHING" || status === "GENERATING";
+  const opts: { k: BrushType; l: string; icon: React.ReactNode; title: string }[] = [
+    { k: "wall", l: "Wall", icon: <Square size={12} />, title: "Draw walls (block movement)" },
+    { k: "weight", l: "Weight ×5", icon: <CircleDot size={12} />, title: "Draw weight cells (cost 5)" },
+    { k: "erase", l: "Erase", icon: <Eraser size={12} />, title: "Erase walls and weights" },
+  ];
+  return (
+    <div className="seg-shell" role="radiogroup" aria-label="Brush">
+      {opts.map((o) => (
+        <button
+          key={o.k}
+          role="radio"
+          aria-checked={brush === o.k}
+          disabled={disabled}
+          title={o.title}
+          onClick={() => setBrush(o.k)}
+          className={`seg-btn inline-flex items-center gap-1 ${brush === o.k ? "seg-btn-active" : ""}`}
+        >
+          {o.icon}
+          {o.l}
+        </button>
+      ))}
+    </div>
   );
 }
 

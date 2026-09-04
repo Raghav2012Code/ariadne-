@@ -11,7 +11,8 @@ export function GridCanvas() {
   const startNode = useGridStore((s) => s.startNode);
   const targetNode = useGridStore((s) => s.targetNode);
   const moveNode = useGridStore((s) => s.moveNode);
-  const setWall = useGridStore((s) => s.setWall);
+  const setCellType = useGridStore((s) => s.setCellType);
+  const brush = useGridStore((s) => s.brush);
   const status = useGridStore((s) => s.status);
 
   const stageRef = React.useRef<HTMLDivElement>(null);
@@ -61,6 +62,13 @@ export function GridCanvas() {
     };
   }, [compute]);
 
+  const resolvePaintType = (e: { shiftKey: boolean; button: number }): "wall" | "weight" | "empty" => {
+    if (e.shiftKey || e.button === 2) return "empty";
+    if (brush === "weight") return "weight";
+    if (brush === "erase") return "empty";
+    return "wall";
+  };
+
   const getCellFromPoint = (x: number, y: number) => {
     const el = document.elementFromPoint(x, y) as HTMLElement | null;
     const cell = el?.closest("[data-node]") as HTMLElement | null;
@@ -88,8 +96,7 @@ export function GridCanvas() {
     dragRef.current = null;
     mouseDownRef.current = true;
     mouseButtonRef.current = e.button;
-    const isWall = !(e.shiftKey || e.button === 2);
-    setWall({ r, c }, isWall);
+    setCellType({ r, c }, resolvePaintType(e));
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
@@ -115,8 +122,7 @@ export function GridCanvas() {
       p = getCellFromPoint(e.clientX, e.clientY);
     }
     if (!p) return;
-    const isWall = !(e.shiftKey || mouseButtonRef.current === 2);
-    setWall(p, isWall);
+    setCellType(p, resolvePaintType({ shiftKey: e.shiftKey, button: mouseButtonRef.current }));
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {

@@ -3,6 +3,8 @@ export type Point = { r: number; c: number };
 export type CellType = "empty" | "wall" | "weight" | "start" | "target";
 export type CellState = "unvisited" | "visited" | "frontier" | "path";
 
+export type BrushType = "wall" | "weight" | "erase";
+
 export interface CellNode {
   r: number;
   c: number;
