@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useGridStore } from "@/store/useGridStore";
-import { Activity, Route, Timer, Cpu, Layers } from "lucide-react";
+import { Activity, Route, Timer, Cpu, Layers, Coins } from "lucide-react";
 
 function Stat({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: string }) {
   return (
@@ -23,6 +23,7 @@ export function MetricsRibbon() {
   const status = useGridStore((s) => s.status);
   const visited = useGridStore((s) => s.nodesVisitedCount);
   const pathLen = useGridStore((s) => s.pathLength);
+  const pathCost = useGridStore((s) => s.pathCost);
   const latency = useGridStore((s) => s.executionTimeMs);
 
   const statusColor =
@@ -49,6 +50,7 @@ export function MetricsRibbon() {
           accent={statusColor}
         />
         <Stat icon={<Route size={14} />} label="Visited / Path" value={`${visited} / ${pathLen}`} accent="text-amber-200" />
+        <Stat icon={<Coins size={14} />} label="Cost" value={`${pathCost}`} accent="text-orange-200" />
         <Stat icon={<Timer size={14} />} label="Latency" value={`${latency.toFixed(1)}ms`} />
         <span className="ml-auto hidden md:block font-mono text-[11px] text-zinc-600">
           ariadne · {visited > 0 ? "run complete" : "ready"} · {new Date().getFullYear()}

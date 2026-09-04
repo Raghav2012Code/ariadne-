@@ -42,5 +42,6 @@ export const SpeedDelays: Record<SpeedType, number> = {
 export interface Telemetry {
   nodesVisitedCount: number;
   pathLength: number;
+  pathCost: number;
   executionTimeMs: number;
 }

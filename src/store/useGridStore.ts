@@ -4,7 +4,7 @@ import type {
   CellNode, Point, AlgorithmType, DifficultyType, SpeedType, EngineStatus, BrushType,
 } from "./types";
 import { DensityPresets } from "./types";
-import { createGrid, getNode } from "@/lib/utils/gridHelpers";
+import { createGrid, getNode, nodeCost } from "@/lib/utils/gridHelpers";
 import { recursiveBacktracker } from "@/lib/algorithms/maze/backtracker";
 import { randomizedPrims } from "@/lib/algorithms/maze/prims";
 import { cellularAutomata } from "@/lib/algorithms/maze/cellular";
@@ -31,6 +31,7 @@ type StoreState = {
   isEuclidean: boolean;
   nodesVisitedCount: number;
   pathLength: number;
+  pathCost: number;
   executionTimeMs: number;
   abortController: AbortController | null;
   densityKey: string;
@@ -86,6 +87,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
   isEuclidean: false,
   nodesVisitedCount: 0,
   pathLength: 0,
+  pathCost: 0,
   executionTimeMs: 0,
   abortController: null,
   densityKey: "balanced",
@@ -103,7 +105,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     grid[start.r][start.c].type = "start";
     grid[target.r][target.c].type = "target";
     GridAnimator.resetCellStyles();
-    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0 });
+    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, pathCost: 0, executionTimeMs: 0 });
   },
 
   hydrateFromUrl: (algo, diff, speed) => {
@@ -161,7 +163,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       }
     }
     GridAnimator.resetCellStyles();
-    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+    set({ grid: [...grid.map((row) => [...row])], status: "IDLE", nodesVisitedCount: 0, pathLength: 0, pathCost: 0, executionTimeMs: 0, abortController: null });
   },
 
   clearWalls: () => {
@@ -182,7 +184,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     newGrid[startNode.r][startNode.c] = { ...newGrid[startNode.r][startNode.c], type: "start" as CellNode["type"] };
     newGrid[targetNode.r][targetNode.c] = { ...newGrid[targetNode.r][targetNode.c], type: "target" as CellNode["type"] };
     GridAnimator.resetCellStyles();
-    set({ grid: newGrid, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+    set({ grid: newGrid, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, pathCost: 0, executionTimeMs: 0, abortController: null });
   },
 
   fullReset: () => {
@@ -197,7 +199,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     grid[start.r][start.c].type = "start";
     grid[target.r][target.c].type = "target";
     GridAnimator.resetCellStyles();
-    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+    set({ rows: r, cols: c, grid, startNode: start, targetNode: target, status: "IDLE", nodesVisitedCount: 0, pathLength: 0, pathCost: 0, executionTimeMs: 0, abortController: null });
   },
 
   moveNode: (type, to) => {
@@ -288,7 +290,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       // Animate only the newly-added walls.
       await GridAnimator.animateMazeGeneration(addedWalls, animSpeed);
       if (controller.signal.aborted) return;
-      set({ status: "IDLE", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0, abortController: null });
+      set({ status: "IDLE", nodesVisitedCount: 0, pathLength: 0, pathCost: 0, executionTimeMs: 0, abortController: null });
     } catch (e) {
       if ((e as DOMException).name === "AbortError") return;
       set({ status: "IDLE", abortController: null });
@@ -308,7 +310,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
     }
     GridAnimator.resetCellStyles();
     const controller = new AbortController();
-    set({ abortController: controller, status: "SEARCHING", nodesVisitedCount: 0, pathLength: 0, executionTimeMs: 0 });
+    set({ abortController: controller, status: "SEARCHING", nodesVisitedCount: 0, pathLength: 0, pathCost: 0, executionTimeMs: 0 });
     const animSpeed = speedToAnimation(st.speed);
     const t0 = performance.now();
     const visitedOrder: Coordinate[] = [];
@@ -341,7 +343,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
       if (controller.signal.aborted) return;
       const t1 = performance.now();
       if (!end) {
-        set({ status: "UNREACHABLE", nodesVisitedCount: visitedOrder.length, executionTimeMs: t1 - t0, abortController: null });
+        set({ status: "UNREACHABLE", nodesVisitedCount: visitedOrder.length, pathLength: 0, pathCost: 0, executionTimeMs: t1 - t0, abortController: null });
         // Still animate visited to show unreachable
         await GridAnimator.animateVisitedNodes(visitedOrder, animSpeed, () => {
           set({ nodesVisitedCount: visitedOrder.length });
@@ -385,8 +387,11 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
         set({ nodesVisitedCount: visitedOrder.length });
       });
       if (controller.signal.aborted) return;
+      // True traversal cost: weights cost 5, everything else 1 (start excluded).
+      let totalCost = 0;
+      for (let i = 1; i < path.length; i++) totalCost += nodeCost(path[i]);
       await GridAnimator.animateShortestPath(pathCoords, () => {
-        set({ pathLength: path.length - 1 });
+        set({ pathLength: path.length - 1, pathCost: totalCost });
       });
       if (controller.signal.aborted) return;
       // Latency measures algorithm compute time (t1 - t0), not wall-clock
@@ -395,6 +400,7 @@ export const useGridStore = create<StoreState & StoreActions>((set, get) => ({
         status: "FOUND",
         nodesVisitedCount: visitedOrder.length,
         pathLength: path.length - 1,
+        pathCost: totalCost,
         executionTimeMs: t1 - t0,
         abortController: null,
       });
