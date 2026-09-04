@@ -36,6 +36,24 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Space-to-run shortcut (advertised in the toolbar hint).
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName ?? "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      // A focused button already handles Space natively (click) — don't double-fire.
+      if (t?.closest?.("button")) return;
+      e.preventDefault();
+      const s = useGridStore.getState();
+      if (s.status === "SEARCHING" || s.status === "GENERATING") return;
+      void s.runSearch();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <div className="h-[100dvh] w-screen overflow-hidden flex flex-col">
       <Toolbar />
