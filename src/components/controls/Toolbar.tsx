@@ -9,8 +9,10 @@ import { SpeedControl } from "./SpeedControl";
 import type { AlgorithmType, BrushType } from "@/store/types";
 import {
   Brush,
+  Check,
   ChevronDown,
   CircleDot,
+  Link2,
   Play,
   Square,
   Shuffle,
@@ -21,6 +23,7 @@ import {
   MousePointer2,
   BookOpen,
 } from "lucide-react";
+import { updateUrl } from "@/lib/utils/urlState";
 
 const ALGOS: { value: AlgorithmType; label: string; tag: string }[] = [
   { value: "astar", label: "A* Search", tag: "Best overall" },
@@ -184,6 +187,7 @@ export function Toolbar() {
               </div>
             ) : null}
           </div>
+          <ShareButton />
           <Link
             href="/algorithms"
             title="How each algorithm works"
@@ -215,6 +219,61 @@ export function Toolbar() {
         </span>
       </div>
     </header>
+  );
+}
+
+function ShareButton() {
+  const [copied, setCopied] = React.useState(false);
+  const timer = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (timer.current) window.clearTimeout(timer.current);
+    };
+  }, []);
+
+  const onCopy = async () => {
+    const s = useGridStore.getState();
+    updateUrl({ algo: s.selectedAlgorithm, difficulty: s.selectedDifficulty, speed: s.speed });
+    const url = window.location.href;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+    } catch {
+      // Clipboard can be unavailable (permissions); still show the URL via selection fallback.
+      window.prompt("Copy share link:", url);
+      return;
+    }
+    setCopied(true);
+    if (timer.current) window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => void onCopy()}
+      title="Copy a shareable link for this setup (?algo=&difficulty=&speed=)"
+      aria-live="polite"
+    >
+      {copied ? (
+        <>
+          <Check size={14} className="text-emerald-300" /> Copied
+        </>
+      ) : (
+        <>
+          <Link2 size={14} className="text-zinc-400" /> Share
+        </>
+      )}
+    </Button>
   );
 }
 
